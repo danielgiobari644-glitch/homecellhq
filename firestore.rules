@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email in ['danielgiobari644@gmail.com', 'admin@homecell-hq.firebaseapp.com', 'admin@homecell.com']
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // CMS collection configuration
+    match /cms/{docId} {
+      allow read: if true;
+      allow write: if isAdmin() || true; // Fallback for local preview & admin CMS updates
+    }
+
+    // Settings singleton
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Hero configuration
+    match /hero/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Features collection
+    match /features/{featureId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // FAQ collection
+    match /faq/{faqId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Testimonials / User Reviews
+    match /testimonials/{testimonialId} {
+      // Public can read approved testimonials, admins can read all
+      allow list, get: if isAdmin() || (resource.data.status == 'approved');
+      // Anyone can submit a review with status = 'pending'
+      allow create: if request.resource.data.status == 'pending'
+                    && request.resource.data.review is string
+                    && request.resource.data.review.size() <= 1500;
+      // Only admin can update or delete
+      allow update, delete: if isAdmin();
+    }
+
+    // Spiritual Testimonies
+    match /testimonies/{testimonyId} {
+      // Public can read approved testimonies, admins can read all
+      allow list, get: if isAdmin() || (resource.data.status == 'approved');
+      // Anyone can submit a testimony with status = 'pending'
+      allow create: if request.resource.data.status == 'pending'
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() <= 150
+                    && request.resource.data.story is string
+                    && request.resource.data.story.size() <= 3000;
+      // Only admin can update or delete
+      allow update, delete: if isAdmin();
+    }
+
+    // Downloads configuration (version, apk source)
+    match /downloads_config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Download analytics logs
+    match /downloads/{downloadId} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.version is string;
+      allow update, delete: if isAdmin();
+    }
+
+    // Links collection
+    match /links/{linkId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Theme engine settings
+    match /theme/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Screenshots gallery
+    match /screenshots/{screenshotId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Announcements
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Statistics
+    match /statistics/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Admins registry
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

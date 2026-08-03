@@ -1,0 +1,6 @@
+{
+  "name": "HomeCell - Portfolio & Admin CMS",
+  "description": "Official HomeCell landing page, APK download portal, spiritual testimonies, user review system, and dynamic CMS theme dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
