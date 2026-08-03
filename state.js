@@ -326,7 +326,14 @@ const DEFAULT_STATE = {
     churchPhone: '+1 (800) 555-CELL',
     churchAddress: 'Grace Way City Campus, HQ Ministry Center',
     footerText: 'Empowering local churches and cell groups with modern digital tools for discipleship, prayer, attendance tracking, and spiritual growth.',
-    copyright: '© 2026 HomeCell HQ — Empowering the digital church.'
+    copyright: '© 2026 HomeCell HQ — Empowering the digital church.',
+    footerLinks: [
+      { id: 'fl1', label: 'Features', href: '#features' },
+      { id: 'fl2', label: 'Screenshots', href: '#screenshots' },
+      { id: 'fl3', label: 'Testimonials', href: '#testimonials' },
+      { id: 'fl4', label: 'Testimonies', href: '#testimonies' },
+      { id: 'fl5', label: 'FAQ', href: '#faq' }
+    ]
   },
   theme: {
     buttonRadius: '16px',
@@ -571,13 +578,60 @@ class StateStore {
     const newTestimony = {
       id: 'st_' + Date.now(),
       createdAt: new Date().toISOString(),
-      status: 'pending',
+      status: testimony.status || 'pending',
       ...testimony
     };
     this.data.spiritualTestimonies.unshift(newTestimony);
     this.persist();
     this.notify();
     saveCMSConfigToFirestore({ spiritualTestimonies: this.data.spiritualTestimonies });
+  }
+
+  updateSpiritualTestimony(id, partial) {
+    const updated = (this.data.spiritualTestimonies || []).map(st => st.id === id ? { ...st, ...partial } : st);
+    this.updateCMS({ spiritualTestimonies: updated });
+  }
+
+  deleteSpiritualTestimony(id) {
+    const updated = (this.data.spiritualTestimonies || []).filter(st => st.id !== id);
+    this.updateCMS({ spiritualTestimonies: updated });
+  }
+
+  addFooterLink(link) {
+    const newLink = {
+      id: 'fl_' + Date.now(),
+      ...link
+    };
+    const currentLinks = this.data.settings?.footerLinks || [];
+    const updatedLinks = [...currentLinks, newLink];
+    this.updateCMS({
+      settings: {
+        ...this.data.settings,
+        footerLinks: updatedLinks
+      }
+    });
+  }
+
+  updateFooterLink(id, partial) {
+    const currentLinks = this.data.settings?.footerLinks || [];
+    const updatedLinks = currentLinks.map(l => l.id === id ? { ...l, ...partial } : l);
+    this.updateCMS({
+      settings: {
+        ...this.data.settings,
+        footerLinks: updatedLinks
+      }
+    });
+  }
+
+  deleteFooterLink(id) {
+    const currentLinks = this.data.settings?.footerLinks || [];
+    const updatedLinks = currentLinks.filter(l => l.id !== id);
+    this.updateCMS({
+      settings: {
+        ...this.data.settings,
+        footerLinks: updatedLinks
+      }
+    });
   }
 
   setAdminLoggedIn(isLoggedIn, email = '') {

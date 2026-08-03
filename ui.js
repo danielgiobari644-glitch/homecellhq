@@ -141,16 +141,22 @@ function renderNavbar(state) {
 }
 
 function renderHero(state) {
-  const { hero, downloadConfig, statistics } = state;
+  const { hero, downloadConfig, statistics, settings } = state;
   return `
-    <section id="hero" class="relative min-h-[85vh] flex flex-col justify-center px-6 sm:px-12 py-12">
-      <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+    <section id="hero" class="relative min-h-[85vh] flex flex-col justify-center px-6 sm:px-12 py-12 overflow-hidden">
+      ${hero.bgMediaUrl ? `
+        <div class="absolute inset-0 z-0 pointer-events-none opacity-25 overflow-hidden">
+          <img src="${hero.bgMediaUrl}" class="w-full h-full object-cover filter blur-xs" alt="Hero Background" />
+        </div>
+      ` : ''}
+
+      <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
         
         <!-- Left Hero Copy -->
         <div class="lg:col-span-7 flex flex-col gap-6">
           <div class="flex items-center gap-2">
             <span class="inline-block px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-widest">
-              ${hero.badgeText || 'v2.4.0 Now Available'}
+              ${hero.badgeText || `v${downloadConfig.latestVersion} Now Available`}
             </span>
           </div>
 
@@ -165,7 +171,7 @@ function renderHero(state) {
           <div class="flex flex-wrap items-center gap-4 pt-2">
             <button id="hero-btn-download" class="px-8 py-4 bg-white text-slate-950 font-bold rounded-2xl hover:bg-slate-200 transition-all shadow-xl flex items-center gap-3 cursor-pointer text-sm">
               <span class="material-symbols-outlined">android</span>
-              <span>${hero.primaryCtaText || 'Download APK'}</span>
+              <span>${hero.primaryCtaText || 'Download APK'} (${downloadConfig.fileSize || '28.4 MB'})</span>
             </button>
 
             ${hero.isAppButtonVisible ? `
@@ -197,51 +203,58 @@ function renderHero(state) {
         <div class="lg:col-span-5 flex items-center justify-center relative min-h-[480px]">
           
           <!-- Device Frame Mockup -->
-          <div class="w-[300px] sm:w-[320px] h-[580px] bg-slate-900 rounded-[48px] border-[8px] border-slate-800 shadow-2xl relative overflow-hidden">
+          <div class="w-[300px] sm:w-[320px] h-[580px] bg-slate-900 rounded-[48px] border-[8px] border-slate-800 shadow-2xl relative overflow-hidden flex flex-col justify-between">
             <div class="absolute top-0 w-full h-7 bg-slate-900 z-20 flex justify-center items-center">
               <div class="w-28 h-3.5 bg-black rounded-b-2xl"></div>
             </div>
             
-            <!-- Mock App Screen Inside Device -->
-            <div class="p-5 pt-10 flex flex-col gap-4 text-white h-full justify-between">
-              <div class="space-y-4">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xs">✝</div>
-                    <div>
-                      <div class="text-xs font-bold">HomeCell Grace #12</div>
-                      <div class="text-[9px] text-slate-400">18 Members Active</div>
+            ${hero.mockupImageUrl ? `
+              <!-- Custom Admin Uploaded Phone Mockup Picture -->
+              <div class="w-full h-full pt-7 pb-2 px-2 flex items-center justify-center bg-slate-950">
+                <img src="${hero.mockupImageUrl}" class="w-full h-full object-cover rounded-[36px]" alt="Uploaded Phone Mockup" />
+              </div>
+            ` : `
+              <!-- Default Mock App Screen Inside Device -->
+              <div class="p-5 pt-10 flex flex-col gap-4 text-white h-full justify-between">
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                      <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xs">${settings.logoIcon || '✝'}</div>
+                      <div>
+                        <div class="text-xs font-bold">HomeCell Grace #12</div>
+                        <div class="text-[9px] text-slate-400">18 Members Active</div>
+                      </div>
+                    </div>
+                    <span class="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">LIVE</span>
+                  </div>
+
+                  <div class="bg-indigo-600/20 p-3.5 rounded-2xl border border-indigo-500/30 space-y-2">
+                    <div class="text-[10px] uppercase font-bold text-indigo-300">Weekly Attendance</div>
+                    <div class="text-xl font-bold">18 / 20 Members</div>
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div class="bg-gradient-to-r from-cyan-400 to-indigo-500 h-full w-[90%]"></div>
                     </div>
                   </div>
-                  <span class="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">LIVE</span>
+
+                  <div class="space-y-2">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase">Active Prayer Items</div>
+                    <div class="bg-slate-800/60 p-2.5 rounded-xl border border-white/5 text-[10px] space-y-1">
+                      <div class="font-semibold text-slate-200">Sister Mary's Quick Recovery</div>
+                      <div class="text-slate-400 text-[9px]">14 group members praying</div>
+                    </div>
+                    <div class="bg-slate-800/60 p-2.5 rounded-xl border border-white/5 text-[10px] space-y-1">
+                      <div class="font-semibold text-slate-200">Youth Revival Fellowship</div>
+                      <div class="text-slate-400 text-[9px]">This Friday 7:00 PM</div>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="bg-indigo-600/20 p-3.5 rounded-2xl border border-indigo-500/30 space-y-2">
-                  <div class="text-[10px] uppercase font-bold text-indigo-300">Weekly Attendance</div>
-                  <div class="text-xl font-bold">18 / 20 Members</div>
-                  <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                    <div class="bg-gradient-to-r from-cyan-400 to-indigo-500 h-full w-[90%]"></div>
-                  </div>
-                </div>
-
-                <div class="space-y-2">
-                  <div class="text-[10px] font-bold text-slate-400 uppercase">Active Prayer Items</div>
-                  <div class="bg-slate-800/60 p-2.5 rounded-xl border border-white/5 text-[10px] space-y-1">
-                    <div class="font-semibold text-slate-200">Sister Mary's Quick Recovery</div>
-                    <div class="text-slate-400 text-[9px]">14 group members praying</div>
-                  </div>
-                  <div class="bg-slate-800/60 p-2.5 rounded-xl border border-white/5 text-[10px] space-y-1">
-                    <div class="font-semibold text-slate-200">Youth Revival Fellowship</div>
-                    <div class="text-slate-400 text-[9px]">This Friday 7:00 PM</div>
-                  </div>
-                </div>
+                <button id="mock-download-btn" class="w-full bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer">
+                  <span class="material-symbols-outlined text-sm">download</span>
+                  <span>Download APK v${downloadConfig.latestVersion}</span>
+                </button>
               </div>
-
-              <button id="mock-download-btn" class="w-full bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5">
-                <span class="material-symbols-outlined text-sm">download</span>
-                <span>Download APK v${downloadConfig.latestVersion}</span>
-              </button>
-            </div>
+            `}
           </div>
 
           <!-- Floating Widget: Admin Dashboard Glass Card -->
@@ -667,39 +680,45 @@ function renderCTA(state) {
 }
 
 function renderFooter(state) {
-  const { settings } = state;
+  const { settings, navbarLinks } = state;
+  const fLinks = settings.footerLinks && settings.footerLinks.length > 0 ? settings.footerLinks : navbarLinks;
+
   return `
     <footer class="relative z-10 backdrop-blur-xl bg-slate-950/80 border-t border-white/5 py-12 px-6 sm:px-12 text-slate-400 text-xs">
       <div class="max-w-7xl mx-auto space-y-8">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div class="space-y-3 md:col-span-2">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 text-slate-950 font-bold flex items-center justify-center text-base">✝</div>
+              ${settings.logoImageUrl ? `
+                <img src="${settings.logoImageUrl}" class="w-8 h-8 rounded-lg object-cover" alt="Logo" />
+              ` : `
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 text-slate-950 font-bold flex items-center justify-center text-base">${settings.logoIcon || '✝'}</div>
+              `}
               <span class="text-xl font-bold tracking-tight text-white italic">${settings.logoText || 'HomeCell'}</span>
             </div>
-            <p class="text-slate-400 text-xs max-w-md leading-relaxed">${settings.footerText}</p>
+            <p class="text-slate-400 text-xs max-w-md leading-relaxed">${settings.footerText || ''}</p>
           </div>
 
           <div class="space-y-2">
             <div class="text-white font-bold uppercase text-[11px] tracking-wider">Quick Links</div>
-            <div class="flex flex-col space-y-1">
-              <a href="#features" class="hover:text-white">Features</a>
-              <a href="#screenshots" class="hover:text-white">Screenshots</a>
-              <a href="#testimonials" class="hover:text-white">Testimonials</a>
-              <a href="#testimonies" class="hover:text-white">Testimonies</a>
+            <div class="flex flex-col space-y-1.5">
+              ${fLinks.map(link => `
+                <a href="${link.href}" class="hover:text-white transition-colors">${link.label}</a>
+              `).join('')}
             </div>
           </div>
 
           <div class="space-y-2">
             <div class="text-white font-bold uppercase text-[11px] tracking-wider">HQ Ministry</div>
-            <div>${settings.churchName}</div>
-            <div>${settings.churchAddress}</div>
-            <a href="/admin" id="footer-admin-link" class="text-indigo-400 hover:underline pt-2 inline-block font-semibold">Admin CMS (/admin)</a>
+            <div class="text-slate-300 font-semibold">${settings.churchName || ''}</div>
+            <div class="text-slate-400">${settings.churchAddress || ''}</div>
+            ${settings.churchEmail ? `<div class="text-slate-400 font-mono text-[11px]">${settings.churchEmail}</div>` : ''}
+            <a href="/admin" id="footer-admin-link" class="text-indigo-400 hover:underline pt-2 inline-block font-semibold">Admin CMS Portal (/admin)</a>
           </div>
         </div>
 
         <div class="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500">
-          <div>${settings.copyright}</div>
+          <div>${settings.copyright || '© 2026 HomeCell HQ'}</div>
           <div>Firebase Firestore Secured • WCAG 2.1 Compliant</div>
         </div>
       </div>
@@ -1085,9 +1104,14 @@ function renderFullPageAdminCMS(state) {
           <button data-admin-tab="testimonies" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'testimonies' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
             <span class="material-symbols-outlined text-lg">church</span>
             <div class="flex items-center justify-between w-full">
-              <span>Testimonies</span>
+              <span>Testimonies (${spiritualTestimonies.length})</span>
               ${spiritualTestimonies.filter(st => st.status === 'pending').length > 0 ? `<span class="px-2 py-0.5 rounded-full bg-rose-500 text-white font-bold text-[10px]">${spiritualTestimonies.filter(st => st.status === 'pending').length}</span>` : ''}
             </div>
+          </button>
+
+          <button data-admin-tab="footer" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'footer' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">line_weight</span>
+            <span>Footer & Links</span>
           </button>
 
           <button data-admin-tab="settings" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'settings' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
@@ -1723,21 +1747,220 @@ function renderAdminTabWorkspace(state, tab) {
 
   if (tab === 'testimonies') {
     return `
-      <div class="space-y-4 text-xs text-white">
-        <h3 class="font-bold text-sm text-white">Spiritual Testimonies Moderation</h3>
-        <div class="space-y-3">
-          ${spiritualTestimonies.map(st => `
-            <div class="glass-card p-4 rounded-2xl flex items-center justify-between gap-4">
-              <div class="space-y-1">
-                <span class="font-bold text-white">${st.title}</span> <span class="text-rose-400">(${st.category})</span>
-                <p class="text-slate-300 italic">"${st.story}"</p>
-              </div>
-              <div class="flex items-center gap-2">
-                ${st.status === 'pending' ? `<button data-approve-testimony="${st.id}" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold">Approve</button>` : ''}
-                <button data-delete-testimony="${st.id}" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold">Delete</button>
-              </div>
+      <div class="space-y-8 max-w-4xl text-xs text-white">
+        <!-- Add New Testimony Form -->
+        <form id="form-cms-add-testimony" class="glass-card p-6 rounded-2xl space-y-4 border border-rose-500/30">
+          <div class="space-y-1 border-b border-white/10 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-rose-400">church</span>
+              <span>Add New Spiritual Testimony</span>
+            </h3>
+            <p class="text-slate-400 text-xs">Admin can manually post new testimonies or edit existing user testimonies.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Testimony Title *</label>
+              <input id="cms-t-title" type="text" required placeholder="e.g. Healed of Chronic Pain" class="w-full glass-input p-2.5 rounded-xl text-xs" />
             </div>
-          `).join('')}
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Category *</label>
+              <select id="cms-t-category" class="w-full glass-input p-2.5 rounded-xl text-xs bg-slate-900 text-white">
+                <option value="Healing">Healing & Divine Health</option>
+                <option value="Salvation">Salvation & New Life</option>
+                <option value="Provision">Financial & Work Provision</option>
+                <option value="Family">Family Restoration</option>
+                <option value="Prayer Answered">Answered Prayer</option>
+                <option value="Spiritual Growth">Spiritual Growth</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Author Name</label>
+              <input id="cms-t-name" type="text" placeholder="e.g. Brother Emmanuel" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Cell Group / Church</label>
+              <input id="cms-t-church" type="text" placeholder="e.g. Grace Fellowship Cell #4" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Initial Status</label>
+              <select id="cms-t-status" class="w-full glass-input p-2.5 rounded-xl text-xs bg-slate-900 text-white">
+                <option value="approved">Approved (Live Immediately)</option>
+                <option value="pending">Pending Review</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Full Testimony Story *</label>
+            <textarea id="cms-t-story" required rows="4" placeholder="Type the miracle or spiritual testimony story here..." class="w-full glass-input p-2.5 rounded-xl text-xs leading-relaxed"></textarea>
+          </div>
+
+          <button type="submit" class="bg-rose-600 hover:bg-rose-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer shadow-lg">
+            Add Testimony to Website
+          </button>
+        </form>
+
+        <!-- Existing Testimonies CRUD Manager -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-white/10 pb-3">
+            <h3 class="font-bold text-sm text-white">Manage & Edit Testimonies (${spiritualTestimonies.length})</h3>
+            <span class="text-slate-400 text-xs">${spiritualTestimonies.filter(st => st.status === 'pending').length} Pending Approval</span>
+          </div>
+
+          <div class="space-y-4">
+            ${spiritualTestimonies.map(st => `
+              <div class="glass-card p-5 rounded-2xl space-y-4 border ${st.status === 'pending' ? 'border-amber-500/40 bg-amber-950/10' : 'border-white/10'}">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${st.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
+                      ${st.status === 'approved' ? '✓ Approved' : '⏳ Pending Review'}
+                    </span>
+                    <span class="text-slate-400 text-[10px]">${st.createdAt ? new Date(st.createdAt).toLocaleDateString() : 'Recent'}</span>
+                  </div>
+                  
+                  <div class="flex items-center gap-2">
+                    ${st.status === 'pending' ? `
+                      <button data-approve-testimony="${st.id}" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer">
+                        Approve
+                      </button>
+                    ` : ''}
+                    <button data-save-testimony="${st.id}" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold cursor-pointer">
+                      Save Edits
+                    </button>
+                    <button data-delete-testimony="${st.id}" class="px-3 py-1 bg-rose-600/30 hover:bg-rose-600 text-rose-200 rounded-lg text-xs font-bold cursor-pointer">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-slate-400 text-[10px] font-semibold block mb-1">Title</label>
+                    <input type="text" data-t-edit-title="${st.id}" value="${st.title || ''}" class="w-full glass-input p-2 rounded-lg text-xs" />
+                  </div>
+                  <div>
+                    <label class="text-slate-400 text-[10px] font-semibold block mb-1">Category</label>
+                    <input type="text" data-t-edit-cat="${st.id}" value="${st.category || 'General'}" class="w-full glass-input p-2 rounded-lg text-xs" />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-slate-400 text-[10px] font-semibold block mb-1">Author Name</label>
+                    <input type="text" data-t-edit-name="${st.id}" value="${st.name || ''}" class="w-full glass-input p-2 rounded-lg text-xs" />
+                  </div>
+                  <div>
+                    <label class="text-slate-400 text-[10px] font-semibold block mb-1">Church / Cell Group</label>
+                    <input type="text" data-t-edit-church="${st.id}" value="${st.church || ''}" class="w-full glass-input p-2 rounded-lg text-xs" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="text-slate-400 text-[10px] font-semibold block mb-1">Story Content</label>
+                  <textarea data-t-edit-story="${st.id}" rows="3" class="w-full glass-input p-2 rounded-lg text-xs font-sans leading-relaxed">${st.story || ''}</textarea>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === 'footer') {
+    const fLinks = settings.footerLinks || [];
+    return `
+      <div class="space-y-8 max-w-3xl text-xs text-white">
+        <!-- Footer Description & Church HQ Info Form -->
+        <form id="form-cms-footer-text-settings" class="glass-card p-6 rounded-2xl space-y-4 border border-indigo-500/30">
+          <div class="space-y-1 border-b border-white/10 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-indigo-400">description</span>
+              <span>Footer Text Copy & Church HQ Settings</span>
+            </h3>
+            <p class="text-slate-400 text-xs">Edit the footer text, copyright notice, and church contact info displayed at the bottom of the website.</p>
+          </div>
+
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Footer Description Text</label>
+            <textarea id="cms-footer-desc" rows="3" class="w-full glass-input p-2.5 rounded-xl text-xs">${settings.footerText || ''}</textarea>
+          </div>
+
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Footer Copyright Notice</label>
+            <input id="cms-footer-copyright" type="text" value="${settings.copyright || ''}" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">HQ Church Name</label>
+              <input id="cms-footer-church-name" type="text" value="${settings.churchName || ''}" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">HQ Church Email</label>
+              <input id="cms-footer-church-email" type="email" value="${settings.churchEmail || ''}" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">HQ Phone Number</label>
+              <input id="cms-footer-church-phone" type="text" value="${settings.churchPhone || ''}" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">HQ Address</label>
+              <input id="cms-footer-church-address" type="text" value="${settings.churchAddress || ''}" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+          </div>
+
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer shadow-lg">
+            Save Footer Copy & HQ Info
+          </button>
+        </form>
+
+        <!-- Footer Links Manager -->
+        <div class="glass-card p-6 rounded-2xl space-y-5 border border-white/10">
+          <div class="space-y-1 border-b border-white/10 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-cyan-400">link</span>
+              <span>Footer Quick Links Manager</span>
+            </h3>
+            <p class="text-slate-400 text-xs">Edit, add, or delete quick links displayed in the website footer.</p>
+          </div>
+
+          <form id="form-cms-footer-links" class="space-y-3">
+            ${fLinks.map(link => `
+              <div class="glass-card p-3 rounded-xl flex items-center gap-3 border border-white/5">
+                <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input type="text" data-fl-label-id="${link.id}" value="${link.label}" placeholder="Link Label" class="glass-input p-2 rounded-lg text-xs" />
+                  <input type="text" data-fl-href-id="${link.id}" value="${link.href}" placeholder="Target Anchor/URL (e.g. #features)" class="glass-input p-2 rounded-lg text-xs font-mono" />
+                </div>
+                <button type="button" data-delete-footer-link="${link.id}" class="p-1.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500/40 rounded-lg cursor-pointer">
+                  <span class="material-symbols-outlined text-base">delete</span>
+                </button>
+              </div>
+            `).join('')}
+
+            <button type="submit" class="mt-2 bg-cyan-600 hover:bg-cyan-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer shadow-md">
+              Save Footer Links Changes
+            </button>
+          </form>
+
+          <!-- Add New Footer Link Form -->
+          <form id="form-add-footer-link" class="pt-4 border-t border-white/10 space-y-3">
+            <h4 class="font-bold text-xs text-indigo-300 uppercase tracking-wider">+ Add New Footer Link</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input id="add-footer-label" type="text" required placeholder="Link Label (e.g. Prayer Requests)" class="glass-input p-2.5 rounded-xl text-xs" />
+              <input id="add-footer-href" type="text" required placeholder="Anchor / URL (e.g. #prayer)" class="glass-input p-2.5 rounded-xl text-xs font-mono" />
+            </div>
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-4 py-2 rounded-xl text-white cursor-pointer">
+              Add Link to Footer
+            </button>
+          </form>
         </div>
       </div>
     `;
@@ -2429,12 +2652,126 @@ function attachEvents(container) {
           title: container.querySelector('#cms-hero-title').value,
           subtitle: container.querySelector('#cms-hero-subtitle').value,
           primaryCtaText: container.querySelector('#cms-hero-cta1').value,
-          appButtonText: container.querySelector('#cms-hero-cta2').value
+          appButtonText: container.querySelector('#cms-hero-cta2').value,
+          bgMediaUrl: container.querySelector('#cms-hero-bg-url')?.value || '',
+          mockupImageUrl: container.querySelector('#cms-hero-mockup-url')?.value || ''
         }
       });
-      alert('Hero Copy Updated!');
+      alert('Hero Copy & Pictures Updated!');
     };
   }
+
+  // Admin Add Testimony Form
+  const formAddTestimony = container.querySelector('#form-cms-add-testimony');
+  if (formAddTestimony) {
+    formAddTestimony.onsubmit = (e) => {
+      e.preventDefault();
+      const title = container.querySelector('#cms-t-title').value;
+      const category = container.querySelector('#cms-t-category').value;
+      const name = container.querySelector('#cms-t-name').value || 'Anonymous';
+      const church = container.querySelector('#cms-t-church').value || 'HomeCell Group';
+      const status = container.querySelector('#cms-t-status').value;
+      const story = container.querySelector('#cms-t-story').value;
+
+      store.addSpiritualTestimony({
+        title,
+        category,
+        name,
+        church,
+        status,
+        story
+      });
+      alert(`Spiritual Testimony "${title}" added!`);
+    };
+  }
+
+  // Save Testimony Edits
+  container.querySelectorAll('[data-save-testimony]').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute('data-save-testimony');
+      const title = container.querySelector(`[data-t-edit-title="${id}"]`)?.value;
+      const category = container.querySelector(`[data-t-edit-cat="${id}"]`)?.value;
+      const name = container.querySelector(`[data-t-edit-name="${id}"]`)?.value;
+      const church = container.querySelector(`[data-t-edit-church="${id}"]`)?.value;
+      const story = container.querySelector(`[data-t-edit-story="${id}"]`)?.value;
+
+      store.updateSpiritualTestimony(id, { title, category, name, church, story });
+      alert('Testimony updated!');
+    };
+  });
+
+  // Footer Text & HQ Settings Form
+  const formFooterTextSettings = container.querySelector('#form-cms-footer-text-settings');
+  if (formFooterTextSettings) {
+    formFooterTextSettings.onsubmit = (e) => {
+      e.preventDefault();
+      const footerText = container.querySelector('#cms-footer-desc').value;
+      const copyright = container.querySelector('#cms-footer-copyright').value;
+      const churchName = container.querySelector('#cms-footer-church-name').value;
+      const churchEmail = container.querySelector('#cms-footer-church-email').value;
+      const churchPhone = container.querySelector('#cms-footer-church-phone').value;
+      const churchAddress = container.querySelector('#cms-footer-church-address').value;
+
+      store.updateCMS({
+        settings: {
+          ...store.state.settings,
+          footerText,
+          copyright,
+          churchName,
+          churchEmail,
+          churchPhone,
+          churchAddress
+        }
+      });
+      alert('Footer Copy & Church HQ Info Saved!');
+    };
+  }
+
+  // Footer Links CRUD Form
+  const formFooterLinks = container.querySelector('#form-cms-footer-links');
+  if (formFooterLinks) {
+    formFooterLinks.onsubmit = (e) => {
+      e.preventDefault();
+      const currentLinks = store.state.settings?.footerLinks || [];
+      const updatedLinks = currentLinks.map(link => {
+        const labelInput = container.querySelector(`[data-fl-label-id="${link.id}"]`);
+        const hrefInput = container.querySelector(`[data-fl-href-id="${link.id}"]`);
+        return {
+          ...link,
+          label: labelInput ? labelInput.value : link.label,
+          href: hrefInput ? hrefInput.value : link.href
+        };
+      });
+      store.updateCMS({
+        settings: {
+          ...store.state.settings,
+          footerLinks: updatedLinks
+        }
+      });
+      alert('Footer quick links updated!');
+    };
+  }
+
+  const formAddFooterLink = container.querySelector('#form-add-footer-link');
+  if (formAddFooterLink) {
+    formAddFooterLink.onsubmit = (e) => {
+      e.preventDefault();
+      const label = container.querySelector('#add-footer-label').value;
+      const href = container.querySelector('#add-footer-href').value;
+      store.addFooterLink({ label, href });
+      formAddFooterLink.reset();
+      alert(`Footer link "${label}" added!`);
+    };
+  }
+
+  container.querySelectorAll('[data-delete-footer-link]').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute('data-delete-footer-link');
+      if (confirm('Delete this footer link?')) {
+        store.deleteFooterLink(id);
+      }
+    };
+  });
 
   const formSettings = container.querySelector('#form-cms-settings');
   if (formSettings) {
