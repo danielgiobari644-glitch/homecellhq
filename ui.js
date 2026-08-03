@@ -41,6 +41,19 @@ export function initUI(appElement) {
 
 function renderApp(container) {
   const state = store.state;
+  const hash = window.location.hash;
+  const path = window.location.pathname;
+  const isAdminRoute = hash === '#admin' || path.startsWith('/admin') || activeModal === 'adminCMS' || activeModal === 'adminLogin';
+
+  if (isAdminRoute) {
+    if (!state.adminState.isLoggedIn) {
+      container.innerHTML = renderFullPageAdminLogin(state);
+    } else {
+      container.innerHTML = renderFullPageAdminCMS(state);
+    }
+    attachEvents(container);
+    return;
+  }
 
   container.innerHTML = `
     <!-- Navbar -->
@@ -72,14 +85,20 @@ function renderApp(container) {
 }
 
 function renderNavbar(state) {
-  const { settings } = state;
+  const { settings, navbarLinks = [] } = state;
+  const activeLinks = navbarLinks.filter(l => l.isVisible !== false);
+
   return `
-    <nav class="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/60 border-b border-white/10 px-6 sm:px-12 py-4">
+    <nav class="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/70 border-b border-white/10 px-6 sm:px-12 py-4">
       <div class="flex items-center justify-between max-w-7xl mx-auto">
-        <a href="/" class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 text-slate-950 font-bold text-xl">
-            ✝
-          </div>
+        <a href="/" class="flex items-center gap-3 group">
+          ${settings.logoImageUrl ? `
+            <img src="${settings.logoImageUrl}" alt="Logo" class="w-10 h-10 rounded-xl object-cover border border-indigo-500/40 shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform" />
+          ` : `
+            <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 text-slate-950 font-bold text-xl group-hover:scale-105 transition-transform">
+              ${settings.logoIcon || '✝'}
+            </div>
+          `}
           <span class="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300 italic">
             ${settings.logoText || 'HomeCell'}
           </span>
@@ -87,12 +106,9 @@ function renderNavbar(state) {
 
         <!-- Desktop Navigation Links -->
         <div class="hidden md:flex items-center gap-8 text-xs font-semibold text-slate-300 uppercase tracking-widest">
-          <a href="#features" class="hover:text-indigo-400 transition-colors">Features</a>
-          <a href="#screenshots" class="hover:text-indigo-400 transition-colors">Screenshots</a>
-          <a href="#about" class="hover:text-indigo-400 transition-colors">About</a>
-          <a href="#testimonials" class="hover:text-indigo-400 transition-colors">Testimonials</a>
-          <a href="#testimonies" class="hover:text-indigo-400 transition-colors">Testimonies</a>
-          <a href="#faq" class="hover:text-indigo-400 transition-colors">FAQ</a>
+          ${activeLinks.map(l => `
+            <a href="${l.href}" class="hover:text-indigo-400 transition-colors">${l.label}</a>
+          `).join('')}
         </div>
 
         <div class="flex items-center gap-3">
@@ -111,12 +127,9 @@ function renderNavbar(state) {
       <!-- Mobile Navigation Drawer -->
       ${isMobileMenuOpen ? `
         <div class="md:hidden absolute top-full left-0 w-full bg-slate-950/95 backdrop-blur-2xl border-b border-white/10 px-6 py-6 flex flex-col gap-4 shadow-2xl animate-fadeIn z-50">
-          <a href="#features" class="mobile-nav-link text-sm font-semibold text-slate-300 hover:text-white py-2 border-b border-white/5">Features</a>
-          <a href="#screenshots" class="mobile-nav-link text-sm font-semibold text-slate-300 hover:text-white py-2 border-b border-white/5">Screenshots</a>
-          <a href="#about" class="mobile-nav-link text-sm font-semibold text-slate-300 hover:text-white py-2 border-b border-white/5">About</a>
-          <a href="#testimonials" class="mobile-nav-link text-sm font-semibold text-slate-300 hover:text-white py-2 border-b border-white/5">Testimonials</a>
-          <a href="#testimonies" class="mobile-nav-link text-sm font-semibold text-slate-300 hover:text-white py-2 border-b border-white/5">Testimonies</a>
-          <a href="#faq" class="mobile-nav-link text-sm font-semibold text-slate-300 hover:text-white py-2">FAQ</a>
+          ${activeLinks.map(l => `
+            <a href="${l.href}" class="mobile-nav-link text-sm font-semibold text-slate-300 hover:text-white py-2 border-b border-white/5">${l.label}</a>
+          `).join('')}
           <button id="mobile-btn-download" class="w-full mt-2 py-3 bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950 font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer">
             <span class="material-symbols-outlined text-sm">download</span>
             <span>Get HomeCell APK</span>
@@ -932,40 +945,49 @@ function renderTestimonyModalContent() {
   `;
 }
 
-function renderAdminLoginModalContent() {
+function renderFullPageAdminLogin(state) {
   return `
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto animate-fadeIn">
-      <div class="relative w-full max-w-md bg-slate-900 rounded-3xl border border-white/10 shadow-2xl p-6 text-white space-y-6">
-        <button class="modal-close-btn absolute top-4 right-4 text-slate-400 hover:text-white p-1 cursor-pointer">
-          <span class="material-symbols-outlined">close</span>
-        </button>
+    <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-6 relative font-sans">
+      <div class="fixed top-[-10%] left-[-5%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div class="fixed bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-cyan-600/20 rounded-full blur-[150px] pointer-events-none"></div>
 
-        <div class="text-center space-y-2">
-          <div class="w-12 h-12 bg-indigo-600/30 rounded-2xl flex items-center justify-center mx-auto text-indigo-400 font-bold text-2xl">🔐</div>
-          <h2 class="text-xl font-bold">Admin CMS Login</h2>
-          <p class="text-xs text-slate-400">Firebase Auth Protected Portal</p>
+      <div class="relative w-full max-w-md bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl p-8 space-y-6 z-10">
+        <div class="flex items-center justify-between">
+          <button id="admin-login-back-btn" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer font-semibold">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+            <span>Back to Website</span>
+          </button>
+          <span class="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-wider">CMS Admin</span>
+        </div>
+
+        <div class="text-center space-y-3">
+          <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-cyan-400 rounded-2xl flex items-center justify-center mx-auto text-slate-950 font-bold text-3xl shadow-lg shadow-indigo-500/30">
+            ✝
+          </div>
+          <h1 class="text-2xl font-bold tracking-tight text-white">HomeCell Admin Login</h1>
+          <p class="text-xs text-slate-400">Manage Navbar Links, App Pictures, Screenshots, Section Copies & APK Binary Files</p>
         </div>
 
         <form id="form-admin-login" class="space-y-4">
-          <div class="space-y-1">
-            <label class="text-xs text-slate-300">Admin Email</label>
-            <input id="admin-email" type="email" required value="admin@homecell.com" class="w-full glass-input p-3 rounded-xl text-xs" />
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold text-slate-300">Admin Email</label>
+            <input id="admin-email" type="email" required value="admin@homecell.com" class="w-full glass-input p-3 rounded-xl text-xs bg-slate-950/60 border border-white/10 text-white" />
           </div>
 
-          <div class="space-y-1">
+          <div class="space-y-1.5">
             <div class="flex items-center justify-between">
-              <label class="text-xs text-slate-300">Password</label>
-              <span class="text-[10px] text-indigo-400 font-medium">Default: Home.cell+123</span>
+              <label class="text-xs font-semibold text-slate-300">Password</label>
+              <span class="text-[10px] text-indigo-400 font-mono">Default: Home.cell+123</span>
             </div>
-            <input id="admin-pass" type="password" required value="Home.cell+123" class="w-full glass-input p-3 rounded-xl text-xs" />
+            <input id="admin-pass" type="password" required value="Home.cell+123" class="w-full glass-input p-3 rounded-xl text-xs bg-slate-950/60 border border-white/10 text-white" />
           </div>
 
-          <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950 font-bold py-3 rounded-xl text-xs cursor-pointer shadow-lg hover:opacity-95 transition-all">
+          <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950 font-extrabold py-3.5 rounded-xl text-xs cursor-pointer shadow-lg hover:opacity-95 transition-all">
             Login to Admin Dashboard
           </button>
 
           <p class="text-[10px] text-slate-400 text-center italic">
-            Default Password: <code class="text-indigo-300 font-mono">Home.cell+123</code> (or custom saved password)
+            Default Password: <code class="text-indigo-300 font-mono">Home.cell+123</code> (or custom password)
           </p>
         </form>
       </div>
@@ -973,621 +995,797 @@ function renderAdminLoginModalContent() {
   `;
 }
 
-function renderAdminCMSModalContent(state) {
-  const { hero, downloadConfig, testimonials, spiritualTestimonies, settings, statistics, sectionTitles, features, faqs } = state;
-  const titles = sectionTitles || {};
+function renderFullPageAdminCMS(state) {
+  const { testimonials = [], spiritualTestimonies = [], settings = {}, features = [], faqs = [], screenshots = [] } = state;
 
   return `
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/90 backdrop-blur-xl overflow-y-auto animate-fadeIn">
-      <div class="relative w-full max-w-5xl bg-slate-900 rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative">
+      <!-- Top Header -->
+      <header class="h-16 bg-slate-900/90 backdrop-blur-xl border-b border-white/10 px-6 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center text-slate-950 font-bold text-lg shadow-md shadow-indigo-500/20">
+            ${settings.logoIcon || '✝'}
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-bold text-sm text-white">${settings.logoText || 'HomeCell'} Admin CMS</h1>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">🟢 Live Sync</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Full-Page Management Portal for APKs, Pictures, Navbar & Copy</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button id="admin-view-site-btn" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+            <span class="material-symbols-outlined text-sm">open_in_new</span>
+            <span>View Live Website</span>
+          </button>
+          <button id="admin-logout-btn" class="px-3.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+            <span class="material-symbols-outlined text-sm">logout</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Admin Dashboard with Fixed Left Sidebar -->
+      <div class="flex-1 flex overflow-hidden">
         
-        <!-- Header -->
-        <div class="p-6 bg-slate-950 border-b border-white/10 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl">✝</div>
-            <div>
-              <h2 class="text-lg font-bold text-white">HomeCell CMS Admin Portal</h2>
-              <p class="text-xs text-slate-400">Manage APK Uploads, Web App Link, Section Text, Testimonies & Settings</p>
-            </div>
-          </div>
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-slate-900/60 border-r border-white/10 p-4 space-y-1 flex-shrink-0 overflow-y-auto">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1 mb-1">CMS Admin Dashboard</div>
 
-          <div class="flex items-center gap-3">
-            <button id="admin-logout-btn" class="px-3.5 py-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold hover:bg-rose-500/30 transition-all cursor-pointer">
-              Logout
-            </button>
-            <button class="modal-close-btn p-1.5 text-slate-400 hover:text-white cursor-pointer">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Navigation Tabs -->
-        <div class="flex items-center gap-2 px-6 py-3 bg-slate-950/50 border-b border-white/5 overflow-x-auto text-xs font-semibold">
-          <button data-admin-tab="overview" class="px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeAdminTab === 'overview' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'}">
-            📊 Overview
+          <button data-admin-tab="overview" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'overview' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">dashboard</span>
+            <span>Dashboard Overview</span>
           </button>
-          <button data-admin-tab="apk" class="px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeAdminTab === 'apk' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'}">
-            📱 APK & Web Link
+
+          <button data-admin-tab="apk" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'apk' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">android</span>
+            <span>APK & Web Link</span>
           </button>
-          <button data-admin-tab="hero" class="px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeAdminTab === 'hero' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'}">
-            🎨 Hero Banner
+
+          <button data-admin-tab="navbar" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'navbar' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">menu</span>
+            <span>Navbar & Branding</span>
           </button>
-          <button data-admin-tab="sections_text" class="px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeAdminTab === 'sections_text' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'}">
-            ✏️ Website Section Text
+
+          <button data-admin-tab="hero" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'hero' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">auto_awesome</span>
+            <span>Hero & Background</span>
           </button>
-          <button data-admin-tab="features" class="px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeAdminTab === 'features' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'}">
-            ⚡ Features
+
+          <button data-admin-tab="screenshots" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'screenshots' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">collections</span>
+            <span>App Screenshots (${screenshots.length})</span>
           </button>
-          <button data-admin-tab="faqs" class="px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeAdminTab === 'faqs' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'}">
-            ❓ FAQs
+
+          <button data-admin-tab="sections_text" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'sections_text' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">edit_note</span>
+            <span>Master Section Copy</span>
           </button>
-          <button data-admin-tab="reviews" class="px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeAdminTab === 'reviews' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'}">
-            ⭐ Reviews (${testimonials.filter(t => t.status === 'pending').length})
+
+          <button data-admin-tab="features" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'features' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">bolt</span>
+            <span>Features (${features.length})</span>
           </button>
-          <button data-admin-tab="testimonies" class="px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeAdminTab === 'testimonies' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'}">
-            ✝️ Testimonies (${spiritualTestimonies.filter(st => st.status === 'pending').length})
+
+          <button data-admin-tab="faqs" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'faqs' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">quiz</span>
+            <span>FAQs (${faqs.length})</span>
           </button>
-          <button data-admin-tab="settings" class="px-3.5 py-2 rounded-xl transition-all cursor-pointer ${activeAdminTab === 'settings' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'}">
-            ⚙️ Settings
+
+          <button data-admin-tab="reviews" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'reviews' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">reviews</span>
+            <div class="flex items-center justify-between w-full">
+              <span>Reviews</span>
+              ${testimonials.filter(t => t.status === 'pending').length > 0 ? `<span class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px]">${testimonials.filter(t => t.status === 'pending').length}</span>` : ''}
+            </div>
           </button>
-        </div>
 
-        <!-- CMS Tab Body -->
-        <div class="p-6 overflow-y-auto flex-1 space-y-6 text-xs text-white">
-
-          ${activeAdminTab === 'overview' ? `
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div class="glass-card p-5 rounded-2xl space-y-1">
-                <div class="text-slate-400">Total Downloads</div>
-                <div class="text-3xl font-extrabold text-indigo-400">${statistics.totalDownloads}</div>
-              </div>
-              <div class="glass-card p-5 rounded-2xl space-y-1">
-                <div class="text-slate-400">Active Cell Units</div>
-                <div class="text-3xl font-extrabold text-cyan-400">${statistics.activeCells}</div>
-              </div>
-              <div class="glass-card p-5 rounded-2xl space-y-1">
-                <div class="text-slate-400">Spiritual Testimonies</div>
-                <div class="text-3xl font-extrabold text-rose-400">${spiritualTestimonies.length}</div>
-              </div>
+          <button data-admin-tab="testimonies" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'testimonies' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">church</span>
+            <div class="flex items-center justify-between w-full">
+              <span>Testimonies</span>
+              ${spiritualTestimonies.filter(st => st.status === 'pending').length > 0 ? `<span class="px-2 py-0.5 rounded-full bg-rose-500 text-white font-bold text-[10px]">${spiritualTestimonies.filter(st => st.status === 'pending').length}</span>` : ''}
             </div>
+          </button>
 
-            <!-- Uploaded APK Status -->
-            <div class="glass-card p-6 rounded-2xl space-y-3 border border-indigo-500/30 bg-indigo-950/20">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-indigo-400 text-lg">android</span>
-                  <h3 class="text-sm font-bold text-white">Official APK Binary File</h3>
-                </div>
-                ${downloadConfig.hasUploadedApk ? `
-                  <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">✓ Uploaded & Permanent</span>
-                ` : `
-                  <span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold">Default Package Active</span>
-                `}
-              </div>
-              <div class="text-slate-300">
-                Current File: <strong class="text-white">${downloadConfig.apkFileName || 'HomeCell-v2.4.0.apk'}</strong> (${downloadConfig.fileSize || '28.4 MB'})
-              </div>
-              <p class="text-slate-400 text-[11px]">
-                When users click "Download APK", they download this file. Admin can upload a new .apk anytime under the <strong>APK & Web Link</strong> tab.
-              </p>
-            </div>
+          <button data-admin-tab="settings" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${activeAdminTab === 'settings' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
+            <span class="material-symbols-outlined text-lg">settings</span>
+            <span>Church Settings</span>
+          </button>
+        </aside>
 
-            <!-- Web App Link Card -->
-            <div class="glass-card p-6 rounded-2xl space-y-3 border border-cyan-500/30 bg-cyan-950/20">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-cyan-400 text-lg">open_in_new</span>
-                  <h3 class="text-sm font-bold text-white">Live Web App Link</h3>
-                </div>
-                <a href="${hero.appButtonUrl || 'https://homecell.web.app/app'}" target="_blank" class="text-cyan-400 hover:underline text-[11px] font-semibold flex items-center gap-1">
-                  <span>Visit Portal</span>
-                  <span class="material-symbols-outlined text-xs">launch</span>
-                </a>
-              </div>
-              <div class="text-slate-300 font-mono text-[11px] bg-slate-950/60 p-2.5 rounded-xl border border-white/5 overflow-x-auto">
-                ${hero.appButtonUrl || 'https://homecell.web.app/app'}
-              </div>
-            </div>
-          ` : ''}
+        <!-- Main Workspace Area -->
+        <main class="flex-1 p-6 sm:p-8 overflow-y-auto space-y-6 bg-slate-950/40">
+          ${renderAdminTabWorkspace(state, activeAdminTab)}
+        </main>
 
-          ${activeAdminTab === 'apk' ? `
-            <div class="space-y-8 max-w-3xl">
-
-              <!-- 1. APK File Upload Zone -->
-              <div class="glass-card p-6 rounded-2xl space-y-4 border border-indigo-500/30">
-                <div class="space-y-1">
-                  <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                    <span class="material-symbols-outlined text-indigo-400">upload_file</span>
-                    <span>Upload Official Android Package (.apk File)</span>
-                  </h3>
-                  <p class="text-slate-400 text-xs">
-                    Upload the exact .apk file that all users will download. It is saved in persistent storage and <strong>never expires</strong> until you upload a replacement file.
-                  </p>
-                </div>
-
-                <!-- Dropzone -->
-                <div id="apk-dropzone" class="border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 rounded-2xl p-8 text-center transition-all cursor-pointer bg-slate-950/40 space-y-3">
-                  <input type="file" id="cms-apk-file-input" accept=".apk,application/vnd.android.package-archive,*/*" class="hidden" />
-                  <div class="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-300 flex items-center justify-center mx-auto text-2xl font-bold">
-                    <span class="material-symbols-outlined text-2xl">cloud_upload</span>
-                  </div>
-                  <div>
-                    <div class="text-sm font-bold text-white">Click to Select .apk File or Drag & Drop Here</div>
-                    <div class="text-[11px] text-slate-400 mt-1">Supports standard Android Package (.apk) files up to 100MB+</div>
-                  </div>
-                </div>
-
-                ${isUploadingApk ? `
-                  <div class="space-y-2 bg-slate-950 p-4 rounded-xl border border-indigo-500/30">
-                    <div class="flex justify-between text-xs font-bold text-indigo-300">
-                      <span>Uploading & Saving .apk File to Persistent Storage...</span>
-                      <span>${apkUploadProgress}%</span>
-                    </div>
-                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                      <div class="bg-gradient-to-r from-indigo-500 to-cyan-400 h-full transition-all duration-200" style="width: ${apkUploadProgress}%"></div>
-                    </div>
-                  </div>
-                ` : ''}
-
-                <!-- Uploaded File Badge & Management -->
-                ${downloadConfig.hasUploadedApk ? `
-                  <div class="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 space-y-3">
-                    <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-emerald-400">check_circle</span>
-                        <div>
-                          <div class="font-bold text-white text-xs">${downloadConfig.uploadedFileName || downloadConfig.apkFileName}</div>
-                          <div class="text-[10px] text-slate-400">Size: ${downloadConfig.fileSize} • Uploaded: ${downloadConfig.uploadedAt || 'Active'} • Never Expires</div>
-                        </div>
-                      </div>
-                      <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Active for All Users</span>
-                    </div>
-
-                    <div class="flex items-center gap-3 pt-2 border-t border-emerald-500/20">
-                      <button id="btn-test-download-apk" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl text-white text-xs flex items-center gap-1.5 cursor-pointer">
-                        <span class="material-symbols-outlined text-sm">download</span>
-                        <span>Test Download Uploaded .apk</span>
-                      </button>
-                      <button id="btn-remove-uploaded-apk" class="px-4 py-2 bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:bg-rose-500/30 font-bold rounded-xl text-xs cursor-pointer">
-                        Delete Uploaded File
-                      </button>
-                    </div>
-                  </div>
-                ` : ''}
-              </div>
-
-              <!-- 2. Web App Link Settings -->
-              <form id="form-cms-webapp-link" class="glass-card p-6 rounded-2xl space-y-4 border border-cyan-500/30">
-                <div class="space-y-1 border-b border-white/10 pb-3">
-                  <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                    <span class="material-symbols-outlined text-cyan-400">link</span>
-                    <span>Web App Link & CTA Buttons</span>
-                  </h3>
-                  <p class="text-slate-400 text-xs">Configure the URL for the Web App portal button on the website.</p>
-                </div>
-
-                <div>
-                  <label class="text-slate-300 font-semibold block mb-1">Web App Portal URL</label>
-                  <input id="cms-app-button-url" type="url" required value="${hero.appButtonUrl || 'https://homecell.web.app/app'}" placeholder="e.g. https://homecell.web.app/app" class="w-full glass-input p-3 rounded-xl font-mono text-xs" />
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label class="text-slate-300 font-semibold block mb-1">Web App Button Label</label>
-                    <input id="cms-app-button-text" type="text" value="${hero.appButtonText || 'Open Web App'}" class="w-full glass-input p-3 rounded-xl text-xs" />
-                  </div>
-                  <div class="flex items-center pt-6 gap-3">
-                    <input id="cms-app-button-visible" type="checkbox" ${hero.isAppButtonVisible !== false ? 'checked' : ''} class="w-4 h-4 rounded cursor-pointer" />
-                    <label for="cms-app-button-visible" class="text-slate-300 font-medium cursor-pointer">Display "Open Web App" Button</label>
-                  </div>
-                </div>
-
-                <button type="submit" class="bg-gradient-to-r from-cyan-500 to-indigo-600 hover:opacity-90 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer shadow-lg">
-                  Save Web App Link Configuration
-                </button>
-              </form>
-
-              <!-- 3. Release Config & Changelog -->
-              <form id="form-cms-apk" class="glass-card p-6 rounded-2xl space-y-4">
-                <h3 class="text-sm font-bold text-white border-b border-white/10 pb-3">Release Details & Changelog</h3>
-
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="text-slate-300 font-semibold">Latest Version Number</label>
-                    <input id="cms-apk-version" type="text" value="${downloadConfig.latestVersion}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Display File Size</label>
-                    <input id="cms-apk-size" type="text" value="${downloadConfig.fileSize}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="text-slate-300 font-semibold">Min Android Req</label>
-                    <input id="cms-apk-min" type="text" value="${downloadConfig.minAndroidVersion}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Release Date</label>
-                    <input id="cms-apk-date" type="text" value="${downloadConfig.releaseDate}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                </div>
-
-                <div>
-                  <label class="text-slate-300 font-semibold">Release Notes / Changelog</label>
-                  <textarea id="cms-apk-notes" rows="4" class="w-full glass-input p-2.5 rounded-xl font-mono">${downloadConfig.releaseNotes}</textarea>
-                </div>
-
-                <div class="flex items-center gap-3 pt-2">
-                  <input id="cms-apk-maintenance" type="checkbox" ${downloadConfig.isMaintenanceActive ? 'checked' : ''} class="w-4 h-4" />
-                  <label for="cms-apk-maintenance" class="text-slate-300">Enable Maintenance Notice (Pauses downloads)</label>
-                </div>
-
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer">
-                  Save Release Info
-                </button>
-              </form>
-
-            </div>
-          ` : ''}
-
-          ${activeAdminTab === 'hero' ? `
-            <form id="form-cms-hero" class="space-y-4 max-w-2xl">
-              <h3 class="text-sm font-bold text-white border-b border-white/10 pb-2">Hero Section Copy & Action Buttons</h3>
-              
-              <div>
-                <label class="text-slate-300 font-semibold">Badge Announcement Text</label>
-                <input id="cms-hero-badge" type="text" value="${hero.badgeText}" class="w-full glass-input p-2.5 rounded-xl" />
-              </div>
-
-              <div>
-                <label class="text-slate-300 font-semibold">Main Hero Title</label>
-                <input id="cms-hero-title" type="text" value="${hero.title}" class="w-full glass-input p-2.5 rounded-xl" />
-              </div>
-
-              <div>
-                <label class="text-slate-300 font-semibold">Subtitle Description</label>
-                <textarea id="cms-hero-subtitle" rows="3" class="w-full glass-input p-2.5 rounded-xl">${hero.subtitle}</textarea>
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="text-slate-300 font-semibold">Primary CTA Text ("Download APK")</label>
-                  <input id="cms-hero-cta1" type="text" value="${hero.primaryCtaText || 'Download APK'}" class="w-full glass-input p-2.5 rounded-xl" />
-                </div>
-                <div>
-                  <label class="text-slate-300 font-semibold">Secondary CTA Text ("Open Web App")</label>
-                  <input id="cms-hero-cta2" type="text" value="${hero.appButtonText || 'Open Web App'}" class="w-full glass-input p-2.5 rounded-xl" />
-                </div>
-              </div>
-
-              <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer">
-                Save Hero Settings
-              </button>
-            </form>
-          ` : ''}
-
-          ${activeAdminTab === 'sections_text' ? `
-            <form id="form-cms-sections-text" class="space-y-8 max-w-3xl">
-              <div class="space-y-1 border-b border-white/10 pb-3">
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                  <span class="material-symbols-outlined text-indigo-400">edit_note</span>
-                  <span>Website Master Section Text Editor</span>
-                </h3>
-                <p class="text-slate-400 text-xs">Admin can modify any section header, badge, or subtitle on the website from here.</p>
-              </div>
-
-              <!-- Features Section Text -->
-              <div class="glass-card p-5 rounded-2xl space-y-3">
-                <h4 class="font-bold text-indigo-300 text-xs uppercase tracking-wider">Features Section</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="text-slate-300 font-semibold">Badge Text</label>
-                    <input id="cms-st-featuresBadge" type="text" value="${titles.featuresBadge || 'Platform Capabilities'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Main Section Title</label>
-                    <input id="cms-st-featuresTitle" type="text" value="${titles.featuresTitle || 'Built for Cell Group Excellence'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                </div>
-                <div>
-                  <label class="text-slate-300 font-semibold">Subtitle Description</label>
-                  <textarea id="cms-st-featuresSubtitle" rows="2" class="w-full glass-input p-2.5 rounded-xl">${titles.featuresSubtitle || 'Everything your church fellowship needs: attendance logging, prayer sharing, sermon outlines, and pastoral insights.'}</textarea>
-                </div>
-              </div>
-
-              <!-- Screenshots Section Text -->
-              <div class="glass-card p-5 rounded-2xl space-y-3">
-                <h4 class="font-bold text-cyan-300 text-xs uppercase tracking-wider">Screenshots Section</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="text-slate-300 font-semibold">Badge Text</label>
-                    <input id="cms-st-screenshotsBadge" type="text" value="${titles.screenshotsBadge || 'App Experience'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Main Section Title</label>
-                    <input id="cms-st-screenshotsTitle" type="text" value="${titles.screenshotsTitle || 'Designed for Simplicity & Depth'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                </div>
-                <div>
-                  <label class="text-slate-300 font-semibold">Subtitle Description</label>
-                  <textarea id="cms-st-screenshotsSubtitle" rows="2" class="w-full glass-input p-2.5 rounded-xl">${titles.screenshotsSubtitle || 'Take a visual tour of HomeCell mobile app screens and pastoral analytics dashboards.'}</textarea>
-                </div>
-              </div>
-
-              <!-- About / Mission Section Text -->
-              <div class="glass-card p-5 rounded-2xl space-y-3">
-                <h4 class="font-bold text-violet-300 text-xs uppercase tracking-wider">Kingdom Mission / About Section</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="text-slate-300 font-semibold">Badge Text</label>
-                    <input id="cms-st-aboutBadge" type="text" value="${titles.aboutBadge || 'Kingdom Mission'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Main Section Title</label>
-                    <input id="cms-st-aboutTitle" type="text" value="${titles.aboutTitle || 'Empowering the Local Church for Genuine Fellowship'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                </div>
-                <div>
-                  <label class="text-slate-300 font-semibold">Main Paragraph Copy</label>
-                  <textarea id="cms-st-aboutParagraph1" rows="2" class="w-full glass-input p-2.5 rounded-xl">${titles.aboutParagraph1 || settings.footerText}</textarea>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="text-slate-300 font-semibold">Mission Card Title</label>
-                    <input id="cms-st-missionTitle" type="text" value="${titles.missionTitle || 'Our Mission'}" class="w-full glass-input p-2.5 rounded-xl" />
-                    <textarea id="cms-st-missionText" rows="2" class="w-full glass-input p-2.5 rounded-xl mt-2">${titles.missionText || 'Equip local churches with accessible tools that strengthen fellowship, accelerate discipleship, and care for believers.'}</textarea>
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Vision Card Title</label>
-                    <input id="cms-st-visionTitle" type="text" value="${titles.visionTitle || 'Our Vision'}" class="w-full glass-input p-2.5 rounded-xl" />
-                    <textarea id="cms-st-visionText" rows="2" class="w-full glass-input p-2.5 rounded-xl mt-2">${titles.visionText || 'To see vibrant, multiplying home cells in every neighborhood across the world, supported by technology that serves the Spirit.'}</textarea>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Testimonials Section Text -->
-              <div class="glass-card p-5 rounded-2xl space-y-3">
-                <h4 class="font-bold text-amber-300 text-xs uppercase tracking-wider">User Reviews Section</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="text-slate-300 font-semibold">Badge Text</label>
-                    <input id="cms-st-testimonialsBadge" type="text" value="${titles.testimonialsBadge || 'User Experiences'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Main Section Title</label>
-                    <input id="cms-st-testimonialsTitle" type="text" value="${titles.testimonialsTitle || 'Loved by Pastors & Cell Leaders'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Spiritual Testimonies Section Text -->
-              <div class="glass-card p-5 rounded-2xl space-y-3">
-                <h4 class="font-bold text-rose-300 text-xs uppercase tracking-wider">Spiritual Testimonies Section</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="text-slate-300 font-semibold">Badge Text</label>
-                    <input id="cms-st-testimoniesBadge" type="text" value="${titles.testimoniesBadge || 'Spiritual Testimonies'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Main Section Title</label>
-                    <input id="cms-st-testimoniesTitle" type="text" value="${titles.testimoniesTitle || 'Glorifying God for Miracles & Growth'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                </div>
-                <div>
-                  <label class="text-slate-300 font-semibold">Subtitle Description</label>
-                  <textarea id="cms-st-testimoniesSubtitle" rows="2" class="w-full glass-input p-2.5 rounded-xl">${titles.testimoniesSubtitle || 'Read inspiring stories of healing, family restoration, and spiritual breakthroughs shared by HomeCell members.'}</textarea>
-                </div>
-              </div>
-
-              <!-- FAQ Section Text -->
-              <div class="glass-card p-5 rounded-2xl space-y-3">
-                <h4 class="font-bold text-indigo-300 text-xs uppercase tracking-wider">FAQ Section</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="text-slate-300 font-semibold">Badge Text</label>
-                    <input id="cms-st-faqBadge" type="text" value="${titles.faqBadge || 'Frequently Asked Questions'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Main Section Title</label>
-                    <input id="cms-st-faqTitle" type="text" value="${titles.faqTitle || 'Everything You Need To Know'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- CTA Banner Section Text -->
-              <div class="glass-card p-5 rounded-2xl space-y-3">
-                <h4 class="font-bold text-emerald-300 text-xs uppercase tracking-wider">Bottom CTA Banner</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="text-slate-300 font-semibold">Badge Text</label>
-                    <input id="cms-st-ctaBadge" type="text" value="${titles.ctaBadge || 'Verified Clean Android Release'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Main Section Title</label>
-                    <input id="cms-st-ctaTitle" type="text" value="${titles.ctaTitle || 'Ready to Transform Your Cell Ministry?'}" class="w-full glass-input p-2.5 rounded-xl" />
-                  </div>
-                </div>
-                <div>
-                  <label class="text-slate-300 font-semibold">Subtitle Description</label>
-                  <textarea id="cms-st-ctaSubtitle" rows="2" class="w-full glass-input p-2.5 rounded-xl">${titles.ctaSubtitle || `Download the official HomeCell Android APK v${downloadConfig.latestVersion} today and experience seamless offline attendance, prayer request tracking, and Bible study guides.`}</textarea>
-                </div>
-              </div>
-
-              <button type="submit" class="bg-gradient-to-r from-indigo-500 to-cyan-400 hover:opacity-90 font-bold px-8 py-3 rounded-xl text-slate-950 cursor-pointer shadow-xl text-xs">
-                Save All Website Section Text
-              </button>
-            </form>
-          ` : ''}
-
-          ${activeAdminTab === 'features' ? `
-            <div class="space-y-6 max-w-3xl">
-              <form id="form-cms-add-feature" class="glass-card p-5 rounded-2xl space-y-3">
-                <h4 class="font-bold text-white text-xs">Add New Feature Item</h4>
-                <div class="grid grid-cols-2 gap-3">
-                  <input id="cms-f-title" type="text" required placeholder="Feature Title" class="glass-input p-2.5 rounded-xl" />
-                  <input id="cms-f-cat" type="text" required placeholder="Category (e.g. Discipleship, Attendance)" class="glass-input p-2.5 rounded-xl" />
-                </div>
-                <textarea id="cms-f-desc" required rows="2" placeholder="Feature description..." class="w-full glass-input p-2.5 rounded-xl"></textarea>
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-4 py-2 rounded-xl text-white cursor-pointer">
-                  + Add Feature
-                </button>
-              </form>
-
-              <div class="space-y-3">
-                <h4 class="font-bold text-white text-xs">Existing Features (${features.length})</h4>
-                ${features.map(f => `
-                  <div class="glass-card p-4 rounded-xl flex items-center justify-between gap-4">
-                    <div class="space-y-1">
-                      <div class="flex items-center gap-2">
-                        <span class="font-bold text-white">${f.title}</span>
-                        <span class="px-2 py-0.5 rounded-full text-[9px] bg-indigo-500/20 text-indigo-300 font-bold">${f.category}</span>
-                      </div>
-                      <p class="text-slate-400 text-[11px]">${f.description}</p>
-                    </div>
-                    <button data-delete-feature="${f.id}" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-500">Delete</button>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
-
-          ${activeAdminTab === 'faqs' ? `
-            <div class="space-y-6 max-w-3xl">
-              <form id="form-cms-add-faq" class="glass-card p-5 rounded-2xl space-y-3">
-                <h4 class="font-bold text-white text-xs">Add New FAQ Item</h4>
-                <input id="cms-faq-q" type="text" required placeholder="Question" class="w-full glass-input p-2.5 rounded-xl" />
-                <textarea id="cms-faq-a" required rows="3" placeholder="Answer..." class="w-full glass-input p-2.5 rounded-xl"></textarea>
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-4 py-2 rounded-xl text-white cursor-pointer">
-                  + Add FAQ
-                </button>
-              </form>
-
-              <div class="space-y-3">
-                <h4 class="font-bold text-white text-xs">Existing FAQs (${faqs.length})</h4>
-                ${faqs.map(faq => `
-                  <div class="glass-card p-4 rounded-xl flex items-center justify-between gap-4">
-                    <div class="space-y-1">
-                      <div class="font-bold text-white">${faq.question}</div>
-                      <p class="text-slate-400 text-[11px]">${faq.answer}</p>
-                    </div>
-                    <button data-delete-faq="${faq.id}" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-500">Delete</button>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
-
-          ${activeAdminTab === 'reviews' ? `
-            <div class="space-y-4">
-              <h3 class="font-bold text-sm text-white">App Reviews Moderation</h3>
-              <div class="space-y-3">
-                ${testimonials.map(t => `
-                  <div class="glass-card p-4 rounded-2xl flex items-center justify-between gap-4">
-                    <div class="space-y-1 max-w-xl">
-                      <div class="flex items-center gap-2">
-                        <span class="font-bold text-white">${t.name}</span>
-                        <span class="text-slate-400">(${t.church})</span>
-                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${t.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">${t.status}</span>
-                      </div>
-                      <div class="text-slate-300 italic">"${t.review}"</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      ${t.status === 'pending' ? `
-                        <button data-approve-review="${t.id}" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-500">Approve</button>
-                      ` : ''}
-                      <button data-delete-review="${t.id}" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-500">Delete</button>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
-
-          ${activeAdminTab === 'testimonies' ? `
-            <div class="space-y-4">
-              <h3 class="font-bold text-sm text-white">Spiritual Testimonies Moderation</h3>
-              <div class="space-y-3">
-                ${spiritualTestimonies.map(st => `
-                  <div class="glass-card p-4 rounded-2xl flex items-center justify-between gap-4">
-                    <div class="space-y-1 max-w-xl">
-                      <div class="flex items-center gap-2">
-                        <span class="font-bold text-white">${st.title}</span>
-                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-rose-500/20 text-rose-300">${st.category}</span>
-                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${st.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">${st.status}</span>
-                      </div>
-                      <div class="text-slate-300 italic">"${st.story}"</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      ${st.status === 'pending' ? `
-                        <button data-approve-testimony="${st.id}" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-500">Approve</button>
-                      ` : ''}
-                      <button data-delete-testimony="${st.id}" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-500">Delete</button>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
-
-          ${activeAdminTab === 'settings' ? `
-            <div class="space-y-8 max-w-2xl">
-              <form id="form-cms-settings" class="space-y-4">
-                <h3 class="text-sm font-bold text-white border-b border-white/10 pb-2">Church Network Configuration</h3>
-                <div>
-                  <label class="text-slate-300 font-semibold">Church / Network Name</label>
-                  <input id="cms-church-name" type="text" value="${settings.churchName}" class="w-full glass-input p-2.5 rounded-xl" />
-                </div>
-                <div>
-                  <label class="text-slate-300 font-semibold">Church Email</label>
-                  <input id="cms-church-email" type="text" value="${settings.churchEmail}" class="w-full glass-input p-2.5 rounded-xl" />
-                </div>
-                <div>
-                  <label class="text-slate-300 font-semibold">Footer Copy</label>
-                  <textarea id="cms-footer-text" rows="3" class="w-full glass-input p-2.5 rounded-xl">${settings.footerText}</textarea>
-                </div>
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer">
-                  Save Church Settings
-                </button>
-              </form>
-
-              <!-- Password Change Form -->
-              <form id="form-cms-password" class="space-y-4 pt-6 border-t border-white/10">
-                <div class="space-y-1">
-                  <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                    <span class="material-symbols-outlined text-indigo-400 text-base">lock_reset</span>
-                    <span>Change Admin CMS Password</span>
-                  </h3>
-                  <p class="text-slate-400 text-xs">Update your administrative password. Default: <code class="text-indigo-300 font-mono">Home.cell+123</code></p>
-                </div>
-
-                <div>
-                  <label class="text-slate-300 font-semibold">Current Password</label>
-                  <input id="cms-pass-current" type="password" required placeholder="Enter current password (e.g. Home.cell+123)" class="w-full glass-input p-2.5 rounded-xl text-xs" />
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label class="text-slate-300 font-semibold">New Password</label>
-                    <input id="cms-pass-new" type="password" required minlength="6" placeholder="Enter new password" class="w-full glass-input p-2.5 rounded-xl text-xs" />
-                  </div>
-                  <div>
-                    <label class="text-slate-300 font-semibold">Confirm New Password</label>
-                    <input id="cms-pass-confirm" type="password" required minlength="6" placeholder="Confirm new password" class="w-full glass-input p-2.5 rounded-xl text-xs" />
-                  </div>
-                </div>
-
-                <button type="submit" class="bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-xs cursor-pointer hover:opacity-90 transition-all shadow-lg">
-                  Update Admin Password
-                </button>
-              </form>
-            </div>
-          ` : ''}
-
-        </div>
       </div>
     </div>
   `;
+}
+
+function renderAdminTabWorkspace(state, tab) {
+  const { hero = {}, downloadConfig = {}, testimonials = [], spiritualTestimonies = [], settings = {}, statistics = {}, sectionTitles = {}, features = [], faqs = [], screenshots = [], navbarLinks = [] } = state;
+  const titles = sectionTitles || {};
+
+  if (tab === 'overview') {
+    return `
+      <div class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="glass-card p-5 rounded-2xl space-y-1">
+            <div class="text-slate-400 text-xs">Total Downloads</div>
+            <div class="text-3xl font-extrabold text-indigo-400">${statistics.totalDownloads || 0}</div>
+          </div>
+          <div class="glass-card p-5 rounded-2xl space-y-1">
+            <div class="text-slate-400 text-xs">Active Cell Units</div>
+            <div class="text-3xl font-extrabold text-cyan-400">${statistics.activeCells || 0}</div>
+          </div>
+          <div class="glass-card p-5 rounded-2xl space-y-1">
+            <div class="text-slate-400 text-xs">Spiritual Testimonies</div>
+            <div class="text-3xl font-extrabold text-rose-400">${spiritualTestimonies.length}</div>
+          </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl space-y-3 border border-indigo-500/30 bg-indigo-950/20">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-indigo-400 text-lg">android</span>
+              <h3 class="text-sm font-bold text-white">Official APK Binary File Status</h3>
+            </div>
+            ${downloadConfig.hasUploadedApk ? `<span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">✓ Permanent Binary Active</span>` : `<span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold">Default Package Active</span>`}
+          </div>
+          <div class="text-slate-300 text-xs">
+            Current File: <strong class="text-white">${downloadConfig.apkFileName || 'HomeCell-v2.4.0.apk'}</strong> (${downloadConfig.fileSize || '28.4 MB'})
+          </div>
+          <p class="text-slate-400 text-[11px]">
+            When users click "Download APK", they download this exact binary file. Upload a replacement anytime under <strong>APK & Web Link</strong> tab.
+          </p>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl space-y-3 border border-cyan-500/30 bg-cyan-950/20">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-cyan-400 text-lg">open_in_new</span>
+              <h3 class="text-sm font-bold text-white">Live Web App Portal Link</h3>
+            </div>
+            <a href="${hero.appButtonUrl || 'https://homecell.web.app/app'}" target="_blank" class="text-cyan-400 hover:underline text-[11px] font-semibold flex items-center gap-1">
+              <span>Visit Portal</span>
+              <span class="material-symbols-outlined text-xs">launch</span>
+            </a>
+          </div>
+          <div class="text-slate-300 font-mono text-[11px] bg-slate-950/60 p-2.5 rounded-xl border border-white/5 overflow-x-auto">
+            ${hero.appButtonUrl || 'https://homecell.web.app/app'}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === 'apk') {
+    return `
+      <div class="space-y-8 max-w-3xl text-xs text-white">
+        <!-- APK Upload Zone -->
+        <div class="glass-card p-6 rounded-2xl space-y-4 border border-indigo-500/30">
+          <div class="space-y-1">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-indigo-400">upload_file</span>
+              <span>Upload Official Android Package (.apk File)</span>
+            </h3>
+            <p class="text-slate-400 text-xs">
+              Upload the exact .apk binary file that all users download. Stored in IndexedDB / persistent state, <strong>never expires</strong> until replaced.
+            </p>
+          </div>
+
+          <div id="apk-dropzone" class="border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 rounded-2xl p-8 text-center transition-all cursor-pointer bg-slate-950/40 space-y-3">
+            <input type="file" id="cms-apk-file-input" accept=".apk,application/vnd.android.package-archive,*/*" class="hidden" />
+            <div class="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-300 flex items-center justify-center mx-auto text-2xl font-bold">
+              <span class="material-symbols-outlined text-2xl">cloud_upload</span>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-white">Click to Select .apk File or Drag & Drop Here</div>
+              <div class="text-[11px] text-slate-400 mt-1">Supports standard Android Package (.apk) files up to 100MB+</div>
+            </div>
+          </div>
+
+          ${isUploadingApk ? `
+            <div class="space-y-2 bg-slate-950 p-4 rounded-xl border border-indigo-500/30">
+              <div class="flex justify-between text-xs font-bold text-indigo-300">
+                <span>Saving .apk File to Storage...</span>
+                <span>${apkUploadProgress}%</span>
+              </div>
+              <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r from-indigo-500 to-cyan-400 h-full transition-all duration-200" style="width: ${apkUploadProgress}%"></div>
+              </div>
+            </div>
+          ` : ''}
+
+          ${downloadConfig.hasUploadedApk ? `
+            <div class="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-emerald-400">check_circle</span>
+                  <div>
+                    <div class="font-bold text-white text-xs">${downloadConfig.uploadedFileName || downloadConfig.apkFileName}</div>
+                    <div class="text-[10px] text-slate-400">Size: ${downloadConfig.fileSize} • Uploaded: ${downloadConfig.uploadedAt || 'Active'} • Never Expires</div>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Active for All Users</span>
+              </div>
+
+              <div class="flex items-center gap-3 pt-2 border-t border-emerald-500/20">
+                <button id="btn-test-download-apk" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl text-white text-xs flex items-center gap-1.5 cursor-pointer">
+                  <span class="material-symbols-outlined text-sm">download</span>
+                  <span>Test Download Uploaded .apk</span>
+                </button>
+                <button id="btn-remove-uploaded-apk" class="px-4 py-2 bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:bg-rose-500/30 font-bold rounded-xl text-xs cursor-pointer">
+                  Delete Uploaded File
+                </button>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Web App Link Settings -->
+        <form id="form-cms-webapp-link" class="glass-card p-6 rounded-2xl space-y-4 border border-cyan-500/30">
+          <div class="space-y-1 border-b border-white/10 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-cyan-400">link</span>
+              <span>Web App Link & CTA Button</span>
+            </h3>
+            <p class="text-slate-400 text-xs">Configure the destination URL for the Web App portal button.</p>
+          </div>
+
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Web App Portal URL</label>
+            <input id="cms-app-button-url" type="url" required value="${hero.appButtonUrl || 'https://homecell.web.app/app'}" placeholder="e.g. https://homecell.web.app/app" class="w-full glass-input p-3 rounded-xl font-mono text-xs" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Web App Button Label</label>
+              <input id="cms-app-button-text" type="text" value="${hero.appButtonText || 'Open Web App'}" class="w-full glass-input p-3 rounded-xl text-xs" />
+            </div>
+            <div class="flex items-center pt-6 gap-3">
+              <input id="cms-app-button-visible" type="checkbox" ${hero.isAppButtonVisible !== false ? 'checked' : ''} class="w-4 h-4 rounded cursor-pointer" />
+              <label for="cms-app-button-visible" class="text-slate-300 font-medium cursor-pointer">Display "Open Web App" Button</label>
+            </div>
+          </div>
+
+          <button type="submit" class="bg-gradient-to-r from-cyan-500 to-indigo-600 hover:opacity-90 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer shadow-lg">
+            Save Web App Link Configuration
+          </button>
+        </form>
+
+        <!-- Release Details -->
+        <form id="form-cms-apk" class="glass-card p-6 rounded-2xl space-y-4">
+          <h3 class="text-sm font-bold text-white border-b border-white/10 pb-3">Release Info & Changelog</h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-slate-300 font-semibold">Latest Version Number</label>
+              <input id="cms-apk-version" type="text" value="${downloadConfig.latestVersion}" class="w-full glass-input p-2.5 rounded-xl" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold">Display File Size</label>
+              <input id="cms-apk-size" type="text" value="${downloadConfig.fileSize}" class="w-full glass-input p-2.5 rounded-xl" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-slate-300 font-semibold">Min Android Req</label>
+              <input id="cms-apk-min" type="text" value="${downloadConfig.minAndroidVersion}" class="w-full glass-input p-2.5 rounded-xl" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold">Release Date</label>
+              <input id="cms-apk-date" type="text" value="${downloadConfig.releaseDate}" class="w-full glass-input p-2.5 rounded-xl" />
+            </div>
+          </div>
+
+          <div>
+            <label class="text-slate-300 font-semibold">Release Notes / Changelog</label>
+            <textarea id="cms-apk-notes" rows="4" class="w-full glass-input p-2.5 rounded-xl font-mono">${downloadConfig.releaseNotes}</textarea>
+          </div>
+
+          <div class="flex items-center gap-3 pt-2">
+            <input id="cms-apk-maintenance" type="checkbox" ${downloadConfig.isMaintenanceActive ? 'checked' : ''} class="w-4 h-4" />
+            <label for="cms-apk-maintenance" class="text-slate-300">Enable Maintenance Notice</label>
+          </div>
+
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer">
+            Save Release Details
+          </button>
+        </form>
+      </div>
+    `;
+  }
+
+  if (tab === 'navbar') {
+    return `
+      <div class="space-y-8 max-w-3xl text-xs text-white">
+        <!-- Logo & Branding Form -->
+        <form id="form-cms-branding" class="glass-card p-6 rounded-2xl space-y-4 border border-indigo-500/30">
+          <div class="space-y-1 border-b border-white/10 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-indigo-400">palette</span>
+              <span>Website Logo & Brand Customization</span>
+            </h3>
+            <p class="text-slate-400 text-xs">Admin can change logo text, logo symbol, or upload a custom logo image.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Logo Brand Text</label>
+              <input id="cms-logo-text" type="text" required value="${settings.logoText || 'HomeCell'}" class="w-full glass-input p-3 rounded-xl text-xs" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Logo Icon Symbol (Emoji/SVG Character)</label>
+              <input id="cms-logo-icon" type="text" value="${settings.logoIcon || '✝'}" class="w-full glass-input p-3 rounded-xl text-xs" />
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-slate-300 font-semibold block">Logo Image (URL or Upload File)</label>
+            <input id="cms-logo-image-url" type="text" value="${settings.logoImageUrl || ''}" placeholder="e.g. https://domain.com/logo.png" class="w-full glass-input p-3 rounded-xl text-xs font-mono" />
+            
+            <div class="flex items-center gap-3 pt-1">
+              <label for="cms-logo-image-file" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">upload</span>
+                <span>Upload Custom Logo Picture</span>
+              </label>
+              <input type="file" id="cms-logo-image-file" accept="image/*" class="hidden" />
+              ${settings.logoImageUrl ? `<img src="${settings.logoImageUrl}" class="w-8 h-8 rounded-lg object-cover border border-white/20" />` : ''}
+            </div>
+          </div>
+
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer shadow-lg">
+            Save Branding Configuration
+          </button>
+        </form>
+
+        <!-- Navbar Links Manager -->
+        <div class="glass-card p-6 rounded-2xl space-y-5 border border-white/10">
+          <div class="space-y-1 border-b border-white/10 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-cyan-400">link</span>
+              <span>Navbar Navigation Links Manager</span>
+            </h3>
+            <p class="text-slate-400 text-xs">Edit labels, target anchors/URLs, visibility, or delete/add navbar items.</p>
+          </div>
+
+          <!-- Existing Links List -->
+          <form id="form-cms-navbar-links" class="space-y-3">
+            ${navbarLinks.map(link => `
+              <div class="glass-card p-3.5 rounded-xl flex items-center gap-3 border border-white/5">
+                <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input type="text" data-nav-label-id="${link.id}" value="${link.label}" placeholder="Label" class="glass-input p-2 rounded-lg text-xs" />
+                  <input type="text" data-nav-href-id="${link.id}" value="${link.href}" placeholder="Target (e.g. #features)" class="glass-input p-2 rounded-lg text-xs font-mono" />
+                </div>
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-1 text-[11px] text-slate-300 cursor-pointer">
+                    <input type="checkbox" data-nav-vis-id="${link.id}" ${link.isVisible !== false ? 'checked' : ''} class="rounded" />
+                    <span>Show</span>
+                  </label>
+                  <button type="button" data-delete-nav-link="${link.id}" class="p-1.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500/40 rounded-lg cursor-pointer">
+                    <span class="material-symbols-outlined text-base">delete</span>
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+
+            <button type="submit" class="mt-2 bg-cyan-600 hover:bg-cyan-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer shadow-md">
+              Save Navbar Links Changes
+            </button>
+          </form>
+
+          <!-- Add New Navbar Link Form -->
+          <form id="form-add-nav-link" class="pt-4 border-t border-white/10 space-y-3">
+            <h4 class="font-bold text-xs text-indigo-300 uppercase tracking-wider">+ Add New Navbar Link</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input id="add-nav-label" type="text" required placeholder="Link Label (e.g. Media)" class="glass-input p-2.5 rounded-xl text-xs" />
+              <input id="add-nav-href" type="text" required placeholder="Anchor / Target (e.g. #media)" class="glass-input p-2.5 rounded-xl text-xs font-mono" />
+            </div>
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-4 py-2 rounded-xl text-white cursor-pointer">
+              Add Link to Navbar
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === 'hero') {
+    return `
+      <div class="space-y-8 max-w-3xl text-xs text-white">
+        <!-- Hero Text & CTA Form -->
+        <form id="form-cms-hero" class="glass-card p-6 rounded-2xl space-y-4">
+          <h3 class="text-sm font-bold text-white border-b border-white/10 pb-2">Hero Section Copy & Action Buttons</h3>
+          
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Badge Announcement Text</label>
+            <input id="cms-hero-badge" type="text" value="${hero.badgeText || ''}" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+          </div>
+
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Main Hero Title</label>
+            <input id="cms-hero-title" type="text" value="${hero.title || ''}" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+          </div>
+
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Subtitle Description</label>
+            <textarea id="cms-hero-subtitle" rows="3" class="w-full glass-input p-2.5 rounded-xl text-xs">${hero.subtitle || ''}</textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Primary CTA Text ("Download APK")</label>
+              <input id="cms-hero-cta1" type="text" value="${hero.primaryCtaText || 'Download APK'}" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Secondary CTA Text ("Open Web App")</label>
+              <input id="cms-hero-cta2" type="text" value="${hero.appButtonText || 'Open Web App'}" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+          </div>
+
+          <!-- Hero Background Picture Customization -->
+          <div class="space-y-3 pt-4 border-t border-white/10">
+            <h4 class="font-bold text-xs text-indigo-300 uppercase tracking-wider">Hero Background Picture & Overlay</h4>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Background Image URL</label>
+              <input id="cms-hero-bg-url" type="text" value="${hero.bgMediaUrl || ''}" placeholder="e.g. https://images.unsplash.com/photo-..." class="w-full glass-input p-2.5 rounded-xl text-xs font-mono" />
+            </div>
+            <div class="flex items-center gap-3">
+              <label for="cms-hero-bg-file" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">image</span>
+                <span>Upload Hero Background Image</span>
+              </label>
+              <input type="file" id="cms-hero-bg-file" accept="image/*" class="hidden" />
+            </div>
+          </div>
+
+          <!-- Hero App Mockup Screenshot -->
+          <div class="space-y-3 pt-4 border-t border-white/10">
+            <h4 class="font-bold text-xs text-cyan-300 uppercase tracking-wider">Hero Phone Mockup Picture</h4>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Mockup Image URL</label>
+              <input id="cms-hero-mockup-url" type="text" value="${hero.mockupImageUrl || ''}" placeholder="e.g. https://images.unsplash.com/photo-..." class="w-full glass-input p-2.5 rounded-xl text-xs font-mono" />
+            </div>
+            <div class="flex items-center gap-3">
+              <label for="cms-hero-mockup-file" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">phone_iphone</span>
+                <span>Upload Hero Mockup Picture</span>
+              </label>
+              <input type="file" id="cms-hero-mockup-file" accept="image/*" class="hidden" />
+            </div>
+          </div>
+
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer shadow-lg">
+            Save Hero Copy & Picture Settings
+          </button>
+        </form>
+      </div>
+    `;
+  }
+
+  if (tab === 'screenshots') {
+    return `
+      <div class="space-y-8 max-w-4xl text-xs text-white">
+        <!-- Add New Screenshot Form -->
+        <form id="form-cms-add-screenshot" class="glass-card p-6 rounded-2xl space-y-4 border border-indigo-500/30">
+          <div class="space-y-1 border-b border-white/10 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-indigo-400">add_photo_alternate</span>
+              <span>Add New App Picture / Screenshot</span>
+            </h3>
+            <p class="text-slate-400 text-xs">Upload mobile/tablet screenshots or input picture URLs for the website gallery.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Picture Title *</label>
+              <input id="cms-s-title" type="text" required placeholder="e.g. Attendance & Cell Logging" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Device Frame Type</label>
+              <select id="cms-s-frame" class="w-full glass-input p-2.5 rounded-xl text-xs bg-slate-900 text-white">
+                <option value="phone">📱 Mobile Phone Frame</option>
+                <option value="tablet">📱 Tablet Frame</option>
+                <option value="desktop">💻 Desktop / Web Dashboard Frame</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Description / Caption</label>
+            <textarea id="cms-s-caption" rows="2" placeholder="Explain what users see in this screenshot..." class="w-full glass-input p-2.5 rounded-xl text-xs"></textarea>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-slate-300 font-semibold block">Picture Image (URL or File Upload)</label>
+            <input id="cms-s-url" type="text" placeholder="https://images.unsplash.com/photo-..." class="w-full glass-input p-2.5 rounded-xl text-xs font-mono" />
+            <div class="flex items-center gap-3">
+              <label for="cms-s-file" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">upload_file</span>
+                <span>Select & Upload Image File</span>
+              </label>
+              <input type="file" id="cms-s-file" accept="image/*" class="hidden" />
+              <span id="cms-s-file-name" class="text-slate-400 text-[11px] italic">No file selected</span>
+            </div>
+          </div>
+
+          <button type="submit" class="bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950 font-extrabold px-6 py-2.5 rounded-xl text-xs cursor-pointer shadow-lg hover:opacity-95 transition-all">
+            + Save & Add Screenshot to Website
+          </button>
+        </form>
+
+        <!-- Existing Screenshots Gallery -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-cyan-400">collections</span>
+            <span>Existing App Pictures & Screenshots (${screenshots.length})</span>
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${screenshots.map(s => `
+              <div class="glass-card p-5 rounded-2xl border border-white/10 space-y-3 flex flex-col justify-between">
+                <div class="space-y-3">
+                  <div class="relative aspect-video rounded-xl overflow-hidden bg-slate-950 border border-white/10 flex items-center justify-center">
+                    <img src="${s.url}" alt="${s.title}" class="w-full h-full object-cover" />
+                    <span class="absolute top-2 right-2 px-2 py-1 rounded-full bg-slate-950/80 text-cyan-300 text-[10px] font-bold border border-white/10 uppercase">${s.frame}</span>
+                  </div>
+
+                  <div class="space-y-2">
+                    <input type="text" data-edit-s-title="${s.id}" value="${s.title}" class="w-full glass-input p-2 rounded-lg text-xs font-bold" />
+                    <textarea data-edit-s-caption="${s.id}" rows="2" class="w-full glass-input p-2 rounded-lg text-xs">${s.caption || ''}</textarea>
+                    
+                    <div class="flex items-center justify-between text-[11px]">
+                      <select data-edit-s-frame="${s.id}" class="glass-input p-1.5 rounded-lg bg-slate-900 text-white">
+                        <option value="phone" ${s.frame === 'phone' ? 'selected' : ''}>Mobile Phone</option>
+                        <option value="tablet" ${s.frame === 'tablet' ? 'selected' : ''}>Tablet</option>
+                        <option value="desktop" ${s.frame === 'desktop' ? 'selected' : ''}>Desktop</option>
+                      </select>
+
+                      <label class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 rounded-lg cursor-pointer flex items-center gap-1 font-semibold">
+                        <span class="material-symbols-outlined text-xs">upload</span>
+                        <span>Replace Image</span>
+                        <input type="file" data-upload-s-image="${s.id}" accept="image/*" class="hidden" />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-3 border-t border-white/10">
+                  <button type="button" data-save-s="${s.id}" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 font-bold rounded-xl text-white text-xs cursor-pointer">
+                    Save Changes
+                  </button>
+                  <button type="button" data-delete-screenshot="${s.id}" class="px-3 py-1.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500/40 rounded-xl text-xs font-bold cursor-pointer">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === 'sections_text') {
+    return `
+      <form id="form-cms-sections-text" class="space-y-8 max-w-3xl text-xs text-white">
+        <div class="space-y-1 border-b border-white/10 pb-3">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-indigo-400">edit_note</span>
+            <span>Website Master Section Text Editor</span>
+          </h3>
+          <p class="text-slate-400 text-xs">Admin can modify any section header, badge, or subtitle on the website from here.</p>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl space-y-3">
+          <h4 class="font-bold text-indigo-300 text-xs uppercase tracking-wider">Features Section</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Badge Text</label>
+              <input id="cms-st-featuresBadge" type="text" value="${titles.featuresBadge || 'Platform Capabilities'}" class="w-full glass-input p-2.5 rounded-xl" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Main Section Title</label>
+              <input id="cms-st-featuresTitle" type="text" value="${titles.featuresTitle || 'Built for Cell Group Excellence'}" class="w-full glass-input p-2.5 rounded-xl" />
+            </div>
+          </div>
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Subtitle Description</label>
+            <textarea id="cms-st-featuresSubtitle" rows="2" class="w-full glass-input p-2.5 rounded-xl">${titles.featuresSubtitle || ''}</textarea>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl space-y-3">
+          <h4 class="font-bold text-cyan-300 text-xs uppercase tracking-wider">Screenshots Section</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Badge Text</label>
+              <input id="cms-st-screenshotsBadge" type="text" value="${titles.screenshotsBadge || 'App Experience'}" class="w-full glass-input p-2.5 rounded-xl" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Main Section Title</label>
+              <input id="cms-st-screenshotsTitle" type="text" value="${titles.screenshotsTitle || 'Designed for Simplicity & Depth'}" class="w-full glass-input p-2.5 rounded-xl" />
+            </div>
+          </div>
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Subtitle Description</label>
+            <textarea id="cms-st-screenshotsSubtitle" rows="2" class="w-full glass-input p-2.5 rounded-xl">${titles.screenshotsSubtitle || ''}</textarea>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl space-y-3">
+          <h4 class="font-bold text-violet-300 text-xs uppercase tracking-wider">Kingdom Mission / About Section</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Badge Text</label>
+              <input id="cms-st-aboutBadge" type="text" value="${titles.aboutBadge || 'Kingdom Mission'}" class="w-full glass-input p-2.5 rounded-xl" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Main Section Title</label>
+              <input id="cms-st-aboutTitle" type="text" value="${titles.aboutTitle || 'Empowering the Local Church'}" class="w-full glass-input p-2.5 rounded-xl" />
+            </div>
+          </div>
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Main Paragraph Copy</label>
+            <textarea id="cms-st-aboutParagraph1" rows="2" class="w-full glass-input p-2.5 rounded-xl">${titles.aboutParagraph1 || settings.footerText}</textarea>
+          </div>
+        </div>
+
+        <button type="submit" class="bg-gradient-to-r from-indigo-500 to-cyan-400 hover:opacity-90 font-bold px-8 py-3 rounded-xl text-slate-950 cursor-pointer shadow-xl text-xs">
+          Save All Website Section Text
+        </button>
+      </form>
+    `;
+  }
+
+  if (tab === 'features') {
+    return `
+      <div class="space-y-6 max-w-3xl text-xs text-white">
+        <form id="form-cms-add-feature" class="glass-card p-5 rounded-2xl space-y-3">
+          <h4 class="font-bold text-white text-xs">+ Add New Feature Item</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <input id="cms-f-title" type="text" required placeholder="Feature Title" class="glass-input p-2.5 rounded-xl" />
+            <input id="cms-f-cat" type="text" required placeholder="Category" class="glass-input p-2.5 rounded-xl" />
+          </div>
+          <textarea id="cms-f-desc" required rows="2" placeholder="Description..." class="w-full glass-input p-2.5 rounded-xl"></textarea>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-4 py-2 rounded-xl text-white cursor-pointer">Add Feature</button>
+        </form>
+
+        <div class="space-y-3">
+          <h4 class="font-bold text-white text-xs">Existing Features (${features.length})</h4>
+          ${features.map(f => `
+            <div class="glass-card p-4 rounded-xl flex items-center justify-between gap-4">
+              <div>
+                <span class="font-bold text-white">${f.title}</span> <span class="text-indigo-400 text-[10px]">(${f.category})</span>
+                <p class="text-slate-400 text-[11px]">${f.description}</p>
+              </div>
+              <button data-delete-feature="${f.id}" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold">Delete</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === 'faqs') {
+    return `
+      <div class="space-y-6 max-w-3xl text-xs text-white">
+        <form id="form-cms-add-faq" class="glass-card p-5 rounded-2xl space-y-3">
+          <h4 class="font-bold text-white text-xs">+ Add New FAQ Item</h4>
+          <input id="cms-faq-q" type="text" required placeholder="Question" class="w-full glass-input p-2.5 rounded-xl" />
+          <textarea id="cms-faq-a" required rows="3" placeholder="Answer..." class="w-full glass-input p-2.5 rounded-xl"></textarea>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-4 py-2 rounded-xl text-white cursor-pointer">Add FAQ</button>
+        </form>
+
+        <div class="space-y-3">
+          <h4 class="font-bold text-white text-xs">Existing FAQs (${faqs.length})</h4>
+          ${faqs.map(faq => `
+            <div class="glass-card p-4 rounded-xl flex items-center justify-between gap-4">
+              <div>
+                <div class="font-bold text-white">${faq.question}</div>
+                <p class="text-slate-400 text-[11px]">${faq.answer}</p>
+              </div>
+              <button data-delete-faq="${faq.id}" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold">Delete</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === 'reviews') {
+    return `
+      <div class="space-y-4 text-xs text-white">
+        <h3 class="font-bold text-sm text-white">App Reviews Moderation</h3>
+        <div class="space-y-3">
+          ${testimonials.map(t => `
+            <div class="glass-card p-4 rounded-2xl flex items-center justify-between gap-4">
+              <div class="space-y-1">
+                <span class="font-bold text-white">${t.name}</span> <span class="text-slate-400">(${t.church})</span>
+                <p class="text-slate-300 italic">"${t.review}"</p>
+              </div>
+              <div class="flex items-center gap-2">
+                ${t.status === 'pending' ? `<button data-approve-review="${t.id}" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold">Approve</button>` : ''}
+                <button data-delete-review="${t.id}" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold">Delete</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === 'testimonies') {
+    return `
+      <div class="space-y-4 text-xs text-white">
+        <h3 class="font-bold text-sm text-white">Spiritual Testimonies Moderation</h3>
+        <div class="space-y-3">
+          ${spiritualTestimonies.map(st => `
+            <div class="glass-card p-4 rounded-2xl flex items-center justify-between gap-4">
+              <div class="space-y-1">
+                <span class="font-bold text-white">${st.title}</span> <span class="text-rose-400">(${st.category})</span>
+                <p class="text-slate-300 italic">"${st.story}"</p>
+              </div>
+              <div class="flex items-center gap-2">
+                ${st.status === 'pending' ? `<button data-approve-testimony="${st.id}" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold">Approve</button>` : ''}
+                <button data-delete-testimony="${st.id}" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold">Delete</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === 'settings') {
+    return `
+      <div class="space-y-8 max-w-2xl text-xs text-white">
+        <form id="form-cms-settings" class="space-y-4">
+          <h3 class="text-sm font-bold text-white border-b border-white/10 pb-2">Church Configuration</h3>
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Church / Network Name</label>
+            <input id="cms-church-name" type="text" value="${settings.churchName || ''}" class="w-full glass-input p-2.5 rounded-xl" />
+          </div>
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Church Email</label>
+            <input id="cms-church-email" type="text" value="${settings.churchEmail || ''}" class="w-full glass-input p-2.5 rounded-xl" />
+          </div>
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Footer Copy</label>
+            <textarea id="cms-footer-text" rows="3" class="w-full glass-input p-2.5 rounded-xl">${settings.footerText || ''}</textarea>
+          </div>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-2.5 rounded-xl text-white cursor-pointer">Save Settings</button>
+        </form>
+
+        <form id="form-cms-password" class="space-y-4 pt-6 border-t border-white/10">
+          <h3 class="text-sm font-bold text-white">Change Admin Password</h3>
+          <div>
+            <label class="text-slate-300 font-semibold block mb-1">Current Password</label>
+            <input id="cms-pass-current" type="password" required class="w-full glass-input p-2.5 rounded-xl text-xs" />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">New Password</label>
+              <input id="cms-pass-new" type="password" required minlength="6" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+            <div>
+              <label class="text-slate-300 font-semibold block mb-1">Confirm Password</label>
+              <input id="cms-pass-confirm" type="password" required minlength="6" class="w-full glass-input p-2.5 rounded-xl text-xs" />
+            </div>
+          </div>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-2.5 rounded-xl text-xs">Update Password</button>
+        </form>
+      </div>
+    `;
+  }
+
+  return '';
 }
 
 function attachEvents(container) {
@@ -1639,6 +1837,223 @@ function attachEvents(container) {
       checkRoute();
     };
   }
+
+  const adminBackBtn = container.querySelector('#admin-login-back-btn');
+  if (adminBackBtn) {
+    adminBackBtn.onclick = () => {
+      window.history.pushState({}, '', '/');
+      checkRoute();
+    };
+  }
+
+  const adminViewSiteBtn = container.querySelector('#admin-view-site-btn');
+  if (adminViewSiteBtn) {
+    adminViewSiteBtn.onclick = () => {
+      window.history.pushState({}, '', '/');
+      checkRoute();
+    };
+  }
+
+  // Logo & Branding Form Submission
+  const formBranding = container.querySelector('#form-cms-branding');
+  if (formBranding) {
+    formBranding.onsubmit = (e) => {
+      e.preventDefault();
+      const logoText = container.querySelector('#cms-logo-text').value;
+      const logoIcon = container.querySelector('#cms-logo-icon').value;
+      const logoImageUrl = container.querySelector('#cms-logo-image-url').value;
+
+      store.updateCMS({
+        settings: {
+          ...store.state.settings,
+          logoText,
+          logoIcon,
+          logoImageUrl
+        }
+      });
+      alert('Logo & Branding Updated Successfully!');
+    };
+  }
+
+  const logoFileSelect = container.querySelector('#cms-logo-image-file');
+  if (logoFileSelect) {
+    logoFileSelect.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          store.updateCMS({
+            settings: {
+              ...store.state.settings,
+              logoImageUrl: evt.target.result
+            }
+          });
+          alert('Custom logo image uploaded!');
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  }
+
+  // Navbar Links Form Submission & CRUD
+  const formNavbarLinks = container.querySelector('#form-cms-navbar-links');
+  if (formNavbarLinks) {
+    formNavbarLinks.onsubmit = (e) => {
+      e.preventDefault();
+      const currentLinks = store.state.navbarLinks || [];
+      const updatedLinks = currentLinks.map(link => {
+        const labelInput = container.querySelector(`[data-nav-label-id="${link.id}"]`);
+        const hrefInput = container.querySelector(`[data-nav-href-id="${link.id}"]`);
+        const visInput = container.querySelector(`[data-nav-vis-id="${link.id}"]`);
+        return {
+          ...link,
+          label: labelInput ? labelInput.value : link.label,
+          href: hrefInput ? hrefInput.value : link.href,
+          isVisible: visInput ? visInput.checked : link.isVisible
+        };
+      });
+      store.updateNavbarLinks(updatedLinks);
+      alert('Navbar navigation links updated!');
+    };
+  }
+
+  const formAddNavLink = container.querySelector('#form-add-nav-link');
+  if (formAddNavLink) {
+    formAddNavLink.onsubmit = (e) => {
+      e.preventDefault();
+      const label = container.querySelector('#add-nav-label').value;
+      const href = container.querySelector('#add-nav-href').value;
+      store.addNavbarLink({ label, href });
+      formAddNavLink.reset();
+      alert(`Navbar link "${label}" added!`);
+    };
+  }
+
+  container.querySelectorAll('[data-delete-nav-link]').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute('data-delete-nav-link');
+      if (confirm('Delete this navbar link?')) {
+        store.deleteNavbarLink(id);
+      }
+    };
+  });
+
+  // Hero Image Uploaders
+  const heroBgFileSelect = container.querySelector('#cms-hero-bg-file');
+  if (heroBgFileSelect) {
+    heroBgFileSelect.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          store.updateCMS({
+            hero: { ...store.state.hero, bgMediaUrl: evt.target.result }
+          });
+          alert('Hero Background picture updated!');
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  }
+
+  const heroMockupFileSelect = container.querySelector('#cms-hero-mockup-file');
+  if (heroMockupFileSelect) {
+    heroMockupFileSelect.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          store.updateCMS({
+            hero: { ...store.state.hero, mockupImageUrl: evt.target.result }
+          });
+          alert('Hero mockup picture updated!');
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  }
+
+  // Add Screenshot Form & File Upload
+  let pendingScreenshotFile = null;
+  const sFileInput = container.querySelector('#cms-s-file');
+  if (sFileInput) {
+    sFileInput.onchange = (e) => {
+      if (e.target.files && e.target.files[0]) {
+        pendingScreenshotFile = e.target.files[0];
+        const nameEl = container.querySelector('#cms-s-file-name');
+        if (nameEl) nameEl.textContent = pendingScreenshotFile.name;
+      }
+    };
+  }
+
+  const formAddScreenshot = container.querySelector('#form-cms-add-screenshot');
+  if (formAddScreenshot) {
+    formAddScreenshot.onsubmit = (e) => {
+      e.preventDefault();
+      const title = container.querySelector('#cms-s-title').value;
+      const frame = container.querySelector('#cms-s-frame').value;
+      const caption = container.querySelector('#cms-s-caption').value;
+      let url = container.querySelector('#cms-s-url').value;
+
+      const processAdd = (imgUrl) => {
+        store.addScreenshot({ title, frame, caption, url: imgUrl || 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80' });
+        alert(`Screenshot "${title}" added to gallery!`);
+        pendingScreenshotFile = null;
+        formAddScreenshot.reset();
+        const nameEl = container.querySelector('#cms-s-file-name');
+        if (nameEl) nameEl.textContent = 'No file selected';
+      };
+
+      if (pendingScreenshotFile) {
+        const reader = new FileReader();
+        reader.onload = (evt) => processAdd(evt.target.result);
+        reader.readAsDataURL(pendingScreenshotFile);
+      } else {
+        processAdd(url);
+      }
+    };
+  }
+
+  // Edit/Delete Existing Screenshots
+  container.querySelectorAll('[data-save-s]').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute('data-save-s');
+      const titleEl = container.querySelector(`[data-edit-s-title="${id}"]`);
+      const captionEl = container.querySelector(`[data-edit-s-caption="${id}"]`);
+      const frameEl = container.querySelector(`[data-edit-s-frame="${id}"]`);
+
+      store.updateScreenshot(id, {
+        title: titleEl ? titleEl.value : '',
+        caption: captionEl ? captionEl.value : '',
+        frame: frameEl ? frameEl.value : 'phone'
+      });
+      alert('Screenshot updated!');
+    };
+  });
+
+  container.querySelectorAll('[data-delete-screenshot]').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute('data-delete-screenshot');
+      if (confirm('Delete this app picture screenshot?')) {
+        store.deleteScreenshot(id);
+      }
+    };
+  });
+
+  container.querySelectorAll('[data-upload-s-image]').forEach(input => {
+    input.onchange = (e) => {
+      const id = input.getAttribute('data-upload-s-image');
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          store.updateScreenshot(id, { url: evt.target.result });
+          alert('Screenshot picture replaced!');
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  });
 
   const reviewModalBtn = container.querySelector('#btn-open-review-modal');
   if (reviewModalBtn) reviewModalBtn.onclick = () => { activeModal = 'review'; store.notify(); };

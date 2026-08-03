@@ -309,8 +309,18 @@ const DEFAULT_STATE = {
       answer: 'Yes! Pastors and admins can log into the secure CMS Admin Portal to update app version releases, manage cell group directories, review testimonies, and customize hero announcements.'
     }
   ],
+  navbarLinks: [
+    { id: 'nav1', label: 'Features', href: '#features', isVisible: true },
+    { id: 'nav2', label: 'Screenshots', href: '#screenshots', isVisible: true },
+    { id: 'nav3', label: 'About', href: '#about', isVisible: true },
+    { id: 'nav4', label: 'Testimonials', href: '#testimonials', isVisible: true },
+    { id: 'nav5', label: 'Testimonies', href: '#testimonies', isVisible: true },
+    { id: 'nav6', label: 'FAQ', href: '#faq', isVisible: true }
+  ],
   settings: {
     logoText: 'HomeCell',
+    logoIcon: '✝',
+    logoImageUrl: '',
     churchName: 'HomeCell Global Fellowship Network',
     churchEmail: 'contact@homecell.web.app',
     churchPhone: '+1 (800) 555-CELL',
@@ -506,9 +516,34 @@ class StateStore {
     this.updateCMS({ screenshots: updated });
   }
 
+  updateScreenshot(id, partial) {
+    const updated = (this.data.screenshots || []).map(s => s.id === id ? { ...s, ...partial } : s);
+    this.updateCMS({ screenshots: updated });
+  }
+
   deleteScreenshot(id) {
     const updated = (this.data.screenshots || []).filter(s => s.id !== id);
     this.updateCMS({ screenshots: updated });
+  }
+
+  addNavbarLink(link) {
+    const newLink = {
+      id: 'nav_' + Date.now(),
+      isVisible: true,
+      ...link
+    };
+    const updated = [...(this.data.navbarLinks || []), newLink];
+    this.updateCMS({ navbarLinks: updated });
+  }
+
+  updateNavbarLink(id, partial) {
+    const updated = (this.data.navbarLinks || []).map(l => l.id === id ? { ...l, ...partial } : l);
+    this.updateCMS({ navbarLinks: updated });
+  }
+
+  deleteNavbarLink(id) {
+    const updated = (this.data.navbarLinks || []).filter(l => l.id !== id);
+    this.updateCMS({ navbarLinks: updated });
   }
 
   recordDownload() {
