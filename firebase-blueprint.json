@@ -1,0 +1,254 @@
+{
+  "entities": {
+    "SiteSettings": {
+      "title": "Site Settings",
+      "description": "Global settings for the HomeCell web application",
+      "type": "object",
+      "properties": {
+        "siteTitle": { "type": "string", "maxLength": 100 },
+        "logoText": { "type": "string", "maxLength": 50 },
+        "logoUrl": { "type": "string", "maxLength": 500 },
+        "churchName": { "type": "string", "maxLength": 150 },
+        "churchEmail": { "type": "string", "maxLength": 100 },
+        "churchPhone": { "type": "string", "maxLength": 50 },
+        "churchAddress": { "type": "string", "maxLength": 200 },
+        "footerText": { "type": "string", "maxLength": 500 },
+        "copyright": { "type": "string", "maxLength": 200 },
+        "socialFacebook": { "type": "string", "maxLength": 300 },
+        "socialInstagram": { "type": "string", "maxLength": 300 },
+        "socialYoutube": { "type": "string", "maxLength": 300 },
+        "socialTwitter": { "type": "string", "maxLength": 300 },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "HeroConfig": {
+      "title": "Hero Configuration",
+      "description": "Hero section content and layout settings",
+      "type": "object",
+      "properties": {
+        "badgeText": { "type": "string", "maxLength": 100 },
+        "title": { "type": "string", "maxLength": 200 },
+        "subtitle": { "type": "string", "maxLength": 500 },
+        "primaryCtaText": { "type": "string", "maxLength": 50 },
+        "secondaryCtaText": { "type": "string", "maxLength": 50 },
+        "appButtonText": { "type": "string", "maxLength": 50 },
+        "appButtonUrl": { "type": "string", "maxLength": 500 },
+        "appButtonColor": { "type": "string", "maxLength": 30 },
+        "isAppButtonVisible": { "type": "boolean" },
+        "bgType": { "type": "string", "maxLength": 20 },
+        "bgMediaUrl": { "type": "string", "maxLength": 500 },
+        "overlayOpacity": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "Feature": {
+      "title": "Feature Card",
+      "description": "Feature items showcased on the landing page",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 300 },
+        "icon": { "type": "string", "maxLength": 50 },
+        "category": { "type": "string", "maxLength": 50 },
+        "order": { "type": "number" }
+      },
+      "required": ["title", "description", "icon"]
+    },
+    "FAQ": {
+      "title": "FAQ Item",
+      "description": "Frequently asked question and answer",
+      "type": "object",
+      "properties": {
+        "question": { "type": "string", "maxLength": 200 },
+        "answer": { "type": "string", "maxLength": 1000 },
+        "category": { "type": "string", "maxLength": 50 },
+        "order": { "type": "number" }
+      },
+      "required": ["question", "answer"]
+    },
+    "Testimonial": {
+      "title": "Testimonial / User Review",
+      "description": "User reviews and app testimonials",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "church": { "type": "string", "maxLength": 150 },
+        "city": { "type": "string", "maxLength": 100 },
+        "country": { "type": "string", "maxLength": 100 },
+        "rating": { "type": "number" },
+        "title": { "type": "string", "maxLength": 150 },
+        "review": { "type": "string", "maxLength": 1500 },
+        "photoUrl": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "isFeatured": { "type": "boolean" },
+        "isReviewOfMonth": { "type": "boolean" },
+        "displayOrder": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["rating", "review", "status"]
+    },
+    "SpiritualTestimony": {
+      "title": "Spiritual Testimony",
+      "description": "Spiritual testimonies shared by HomeCell members",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "church": { "type": "string", "maxLength": 150 },
+        "title": { "type": "string", "maxLength": 150 },
+        "story": { "type": "string", "maxLength": 3000 },
+        "category": { "type": "string", "enum": ["Salvation", "Healing", "Growth", "Family", "Provision", "Prayer Answered", "Other"] },
+        "photoUrl": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "isFeatured": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "story", "category", "status"]
+    },
+    "DownloadConfig": {
+      "title": "Download Configuration",
+      "description": "Settings for the APK download portal and version control",
+      "type": "object",
+      "properties": {
+        "downloadMethod": { "type": "string", "enum": ["apk_upload", "external_url"] },
+        "externalApkUrl": { "type": "string", "maxLength": 500 },
+        "apkFileName": { "type": "string", "maxLength": 150 },
+        "apkFileBlob": { "type": "string" },
+        "latestVersion": { "type": "string", "maxLength": 30 },
+        "releaseDate": { "type": "string", "maxLength": 50 },
+        "fileSize": { "type": "string", "maxLength": 30 },
+        "minAndroidVersion": { "type": "string", "maxLength": 30 },
+        "releaseNotes": { "type": "string", "maxLength": 2000 },
+        "installInstructions": { "type": "string", "maxLength": 2000 },
+        "isDownloadEnabled": { "type": "boolean" },
+        "maintenanceNotice": { "type": "string", "maxLength": 500 },
+        "isMaintenanceActive": { "type": "boolean" }
+      }
+    },
+    "DownloadLog": {
+      "title": "Download Log Event",
+      "description": "Analytics tracking for APK downloads",
+      "type": "object",
+      "properties": {
+        "version": { "type": "string", "maxLength": 30 },
+        "downloadMethod": { "type": "string", "maxLength": 30 },
+        "deviceType": { "type": "string", "maxLength": 50 },
+        "browser": { "type": "string", "maxLength": 50 },
+        "country": { "type": "string", "maxLength": 50 },
+        "timestamp": { "type": "string" }
+      }
+    },
+    "ThemeConfig": {
+      "title": "Theme Configuration",
+      "description": "Global visual styling and theme customization settings",
+      "type": "object",
+      "properties": {
+        "primaryColor": { "type": "string", "maxLength": 30 },
+        "secondaryColor": { "type": "string", "maxLength": 30 },
+        "accentColor": { "type": "string", "maxLength": 30 },
+        "backgroundColor": { "type": "string", "maxLength": 30 },
+        "gradientStyle": { "type": "string", "maxLength": 100 },
+        "glassEffect": { "type": "boolean" },
+        "buttonRadius": { "type": "string", "maxLength": 20 },
+        "cardRadius": { "type": "string", "maxLength": 20 },
+        "fontStyle": { "type": "string", "maxLength": 50 },
+        "darkMode": { "type": "boolean" },
+        "heroBackground": { "type": "string", "maxLength": 500 },
+        "backgroundVideoUrl": { "type": "string", "maxLength": 500 },
+        "overlayOpacity": { "type": "number" },
+        "sectionSpacing": { "type": "string", "maxLength": 20 },
+        "shadowIntensity": { "type": "string", "maxLength": 20 }
+      }
+    },
+    "Screenshot": {
+      "title": "App Screenshot",
+      "description": "Screenshots of the HomeCell app for the gallery",
+      "type": "object",
+      "properties": {
+        "imageUrl": { "type": "string", "maxLength": 500 },
+        "caption": { "type": "string", "maxLength": 200 },
+        "deviceFrame": { "type": "string", "enum": ["phone", "tablet", "desktop"] },
+        "order": { "type": "number" }
+      },
+      "required": ["imageUrl", "caption", "deviceFrame"]
+    },
+    "Announcement": {
+      "title": "Promotional Banner / Announcement",
+      "description": "Alert banner displayed at the top of the landing page",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 100 },
+        "message": { "type": "string", "maxLength": 300 },
+        "type": { "type": "string", "enum": ["info", "warning", "success", "alert"] },
+        "isActive": { "type": "boolean" },
+        "linkUrl": { "type": "string", "maxLength": 500 },
+        "linkText": { "type": "string", "maxLength": 50 }
+      }
+    },
+    "Statistics": {
+      "title": "Church Statistics",
+      "description": "Core metric counters for the platform",
+      "type": "object",
+      "properties": {
+        "activeCells": { "type": "number" },
+        "membersReached": { "type": "number" },
+        "prayersShared": { "type": "number" },
+        "countriesRepresented": { "type": "number" },
+        "weeklyGrowthPercent": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "/settings/main": {
+      "schema": { "$ref": "#/entities/SiteSettings" },
+      "description": "Main site settings singleton"
+    },
+    "/hero/main": {
+      "schema": { "$ref": "#/entities/HeroConfig" },
+      "description": "Hero configuration singleton"
+    },
+    "/features/{featureId}": {
+      "schema": { "$ref": "#/entities/Feature" },
+      "description": "Features list"
+    },
+    "/faq/{faqId}": {
+      "schema": { "$ref": "#/entities/FAQ" },
+      "description": "Frequently asked questions"
+    },
+    "/testimonials/{testimonialId}": {
+      "schema": { "$ref": "#/entities/Testimonial" },
+      "description": "User reviews and testimonials"
+    },
+    "/testimonies/{testimonyId}": {
+      "schema": { "$ref": "#/entities/SpiritualTestimony" },
+      "description": "Spiritual testimonies"
+    },
+    "/downloads/{downloadId}": {
+      "schema": { "$ref": "#/entities/DownloadLog" },
+      "description": "Download analytics logs"
+    },
+    "/downloads_config/main": {
+      "schema": { "$ref": "#/entities/DownloadConfig" },
+      "description": "Download configuration singleton"
+    },
+    "/theme/main": {
+      "schema": { "$ref": "#/entities/ThemeConfig" },
+      "description": "Theme customization singleton"
+    },
+    "/screenshots/{screenshotId}": {
+      "schema": { "$ref": "#/entities/Screenshot" },
+      "description": "App screenshot gallery"
+    },
+    "/announcements/{announcementId}": {
+      "schema": { "$ref": "#/entities/Announcement" },
+      "description": "Promotional announcements"
+    },
+    "/statistics/main": {
+      "schema": { "$ref": "#/entities/Statistics" },
+      "description": "Platform statistics counters"
+    },
+    "/admins/{adminId}": {
+      "schema": { "type": "object", "properties": { "email": { "type": "string" }, "role": { "type": "string" } } },
+      "description": "Admin users authorization list"
+    }
+  }
+}
