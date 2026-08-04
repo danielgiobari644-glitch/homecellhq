@@ -515,16 +515,40 @@ class StateStore {
   }
 
   addScreenshot(screenshot) {
+    const imageUrl = screenshot.imageUrl || screenshot.url || '';
+    const deviceFrame = screenshot.deviceFrame || screenshot.frame || 'phone';
     const newS = {
       id: 's_' + Date.now(),
+      title: screenshot.title || 'App Picture',
+      caption: screenshot.caption || '',
+      imageUrl,
+      url: imageUrl,
+      deviceFrame,
+      frame: deviceFrame,
       ...screenshot
     };
+    newS.imageUrl = imageUrl;
+    newS.url = imageUrl;
+    newS.deviceFrame = deviceFrame;
+    newS.frame = deviceFrame;
     const updated = [...(this.data.screenshots || []), newS];
     this.updateCMS({ screenshots: updated });
   }
 
   updateScreenshot(id, partial) {
-    const updated = (this.data.screenshots || []).map(s => s.id === id ? { ...s, ...partial } : s);
+    const updated = (this.data.screenshots || []).map(s => {
+      if (s.id !== id) return s;
+      const imageUrl = partial.imageUrl || partial.url || s.imageUrl || s.url || '';
+      const deviceFrame = partial.deviceFrame || partial.frame || s.deviceFrame || s.frame || 'phone';
+      return {
+        ...s,
+        ...partial,
+        imageUrl,
+        url: imageUrl,
+        deviceFrame,
+        frame: deviceFrame
+      };
+    });
     this.updateCMS({ screenshots: updated });
   }
 

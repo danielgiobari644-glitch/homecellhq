@@ -346,7 +346,7 @@ function renderScreenshots(state) {
   const titles = sectionTitles || {};
   const filtered = screenshotFilter === 'all'
     ? screenshots
-    : screenshots.filter(s => s.deviceFrame === screenshotFilter);
+    : screenshots.filter(s => (s.deviceFrame || s.frame) === screenshotFilter);
 
   return `
     <section id="screenshots" class="py-20 px-6 sm:px-12 relative z-10 bg-slate-950/40 border-y border-white/5">
@@ -385,14 +385,14 @@ function renderScreenshots(state) {
               class="glass-card rounded-3xl overflow-hidden group cursor-pointer transition-all hover:scale-[1.02]"
             >
               <div class="aspect-[4/3] bg-slate-900 relative overflow-hidden">
-                <img src="${item.imageUrl}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src="${item.imageUrl || item.url}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80"></div>
                 <div class="absolute top-3 right-3 bg-slate-950/80 p-2 rounded-xl text-white text-xs border border-white/10">
                   <span class="material-symbols-outlined text-sm">zoom_in</span>
                 </div>
               </div>
               <div class="p-5 space-y-1">
-                <div class="text-[10px] font-bold text-cyan-400 uppercase">${item.deviceFrame} • ${item.title}</div>
+                <div class="text-[10px] font-bold text-cyan-400 uppercase">${item.deviceFrame || item.frame || 'phone'} • ${item.title}</div>
                 <p class="text-xs text-slate-300 font-medium">${item.caption}</p>
               </div>
             </div>
@@ -1556,19 +1556,29 @@ function renderAdminTabWorkspace(state, tab) {
               <div class="glass-card p-5 rounded-2xl border border-white/10 space-y-3 flex flex-col justify-between">
                 <div class="space-y-3">
                   <div class="relative aspect-video rounded-xl overflow-hidden bg-slate-950 border border-white/10 flex items-center justify-center">
-                    <img src="${s.url}" alt="${s.title}" class="w-full h-full object-cover" />
-                    <span class="absolute top-2 right-2 px-2 py-1 rounded-full bg-slate-950/80 text-cyan-300 text-[10px] font-bold border border-white/10 uppercase">${s.frame}</span>
+                    <img src="${s.url || s.imageUrl}" alt="${s.title}" class="w-full h-full object-cover" />
+                    <span class="absolute top-2 right-2 px-2 py-1 rounded-full bg-slate-950/80 text-cyan-300 text-[10px] font-bold border border-white/10 uppercase">${s.frame || s.deviceFrame || 'phone'}</span>
                   </div>
 
                   <div class="space-y-2">
-                    <input type="text" data-edit-s-title="${s.id}" value="${s.title}" class="w-full glass-input p-2 rounded-lg text-xs font-bold" />
-                    <textarea data-edit-s-caption="${s.id}" rows="2" class="w-full glass-input p-2 rounded-lg text-xs">${s.caption || ''}</textarea>
+                    <div>
+                      <label class="text-slate-400 text-[10px] font-semibold block mb-0.5">Title</label>
+                      <input type="text" data-edit-s-title="${s.id}" value="${s.title || ''}" class="w-full glass-input p-2 rounded-lg text-xs font-bold" />
+                    </div>
+                    <div>
+                      <label class="text-slate-400 text-[10px] font-semibold block mb-0.5">Caption</label>
+                      <textarea data-edit-s-caption="${s.id}" rows="2" class="w-full glass-input p-2 rounded-lg text-xs">${s.caption || ''}</textarea>
+                    </div>
+                    <div>
+                      <label class="text-slate-400 text-[10px] font-semibold block mb-0.5">Image URL</label>
+                      <input type="text" data-edit-s-url="${s.id}" value="${s.url || s.imageUrl || ''}" placeholder="https://..." class="w-full glass-input p-2 rounded-lg text-xs font-mono" />
+                    </div>
                     
-                    <div class="flex items-center justify-between text-[11px]">
+                    <div class="flex items-center justify-between text-[11px] pt-1">
                       <select data-edit-s-frame="${s.id}" class="glass-input p-1.5 rounded-lg bg-slate-900 text-white">
-                        <option value="phone" ${s.frame === 'phone' ? 'selected' : ''}>Mobile Phone</option>
-                        <option value="tablet" ${s.frame === 'tablet' ? 'selected' : ''}>Tablet</option>
-                        <option value="desktop" ${s.frame === 'desktop' ? 'selected' : ''}>Desktop</option>
+                        <option value="phone" ${(s.frame || s.deviceFrame) === 'phone' ? 'selected' : ''}>Mobile Phone</option>
+                        <option value="tablet" ${(s.frame || s.deviceFrame) === 'tablet' ? 'selected' : ''}>Tablet</option>
+                        <option value="desktop" ${(s.frame || s.deviceFrame) === 'desktop' ? 'selected' : ''}>Desktop</option>
                       </select>
 
                       <label class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 rounded-lg cursor-pointer flex items-center gap-1 font-semibold">
@@ -2135,7 +2145,7 @@ function attachEvents(container) {
           isVisible: visInput ? visInput.checked : link.isVisible
         };
       });
-      store.updateNavbarLinks(updatedLinks);
+      store.updateCMS({ navbarLinks: updatedLinks });
       alert('Navbar navigation links updated!');
     };
   }
@@ -2219,8 +2229,16 @@ function attachEvents(container) {
       let url = container.querySelector('#cms-s-url').value;
 
       const processAdd = (imgUrl) => {
-        store.addScreenshot({ title, frame, caption, url: imgUrl || 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80' });
-        alert(`Screenshot "${title}" added to gallery!`);
+        const finalUrl = imgUrl || 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80';
+        store.addScreenshot({
+          title,
+          frame,
+          deviceFrame: frame,
+          caption,
+          url: finalUrl,
+          imageUrl: finalUrl
+        });
+        alert(`App Picture "${title}" added successfully!`);
         pendingScreenshotFile = null;
         formAddScreenshot.reset();
         const nameEl = container.querySelector('#cms-s-file-name');
@@ -2237,32 +2255,42 @@ function attachEvents(container) {
     };
   }
 
-  // Edit/Delete Existing Screenshots
+  // Edit/Save Existing Screenshots
   container.querySelectorAll('[data-save-s]').forEach(btn => {
     btn.onclick = () => {
       const id = btn.getAttribute('data-save-s');
       const titleEl = container.querySelector(`[data-edit-s-title="${id}"]`);
       const captionEl = container.querySelector(`[data-edit-s-caption="${id}"]`);
       const frameEl = container.querySelector(`[data-edit-s-frame="${id}"]`);
+      const urlEl = container.querySelector(`[data-edit-s-url="${id}"]`);
+
+      const updatedTitle = titleEl ? titleEl.value : '';
+      const updatedCaption = captionEl ? captionEl.value : '';
+      const updatedFrame = frameEl ? frameEl.value : 'phone';
+      const updatedUrl = urlEl ? urlEl.value : '';
 
       store.updateScreenshot(id, {
-        title: titleEl ? titleEl.value : '',
-        caption: captionEl ? captionEl.value : '',
-        frame: frameEl ? frameEl.value : 'phone'
+        title: updatedTitle,
+        caption: updatedCaption,
+        frame: updatedFrame,
+        deviceFrame: updatedFrame,
+        ...(updatedUrl ? { url: updatedUrl, imageUrl: updatedUrl } : {})
       });
-      alert('Screenshot updated!');
+      alert('Screenshot changes saved successfully!');
     };
   });
 
+  // Delete Existing Screenshot
   container.querySelectorAll('[data-delete-screenshot]').forEach(btn => {
     btn.onclick = () => {
       const id = btn.getAttribute('data-delete-screenshot');
-      if (confirm('Delete this app picture screenshot?')) {
+      if (confirm('Are you sure you want to delete this picture/screenshot?')) {
         store.deleteScreenshot(id);
       }
     };
   });
 
+  // Replace Screenshot Image Upload
   container.querySelectorAll('[data-upload-s-image]').forEach(input => {
     input.onchange = (e) => {
       const id = input.getAttribute('data-upload-s-image');
@@ -2270,8 +2298,15 @@ function attachEvents(container) {
       if (file) {
         const reader = new FileReader();
         reader.onload = (evt) => {
-          store.updateScreenshot(id, { url: evt.target.result });
-          alert('Screenshot picture replaced!');
+          const dataUrl = evt.target.result;
+          const urlInput = container.querySelector(`[data-edit-s-url="${id}"]`);
+          if (urlInput) urlInput.value = dataUrl;
+
+          store.updateScreenshot(id, {
+            url: dataUrl,
+            imageUrl: dataUrl
+          });
+          alert('Screenshot picture replaced successfully!');
         };
         reader.readAsDataURL(file);
       }
@@ -2643,6 +2678,34 @@ function attachEvents(container) {
 
   const formHero = container.querySelector('#form-cms-hero');
   if (formHero) {
+    const bgFile = container.querySelector('#cms-hero-bg-file');
+    if (bgFile) {
+      bgFile.onchange = () => {
+        if (bgFile.files && bgFile.files[0]) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const urlInput = container.querySelector('#cms-hero-bg-url');
+            if (urlInput) urlInput.value = e.target.result;
+          };
+          reader.readAsDataURL(bgFile.files[0]);
+        }
+      };
+    }
+
+    const mockupFile = container.querySelector('#cms-hero-mockup-file');
+    if (mockupFile) {
+      mockupFile.onchange = () => {
+        if (mockupFile.files && mockupFile.files[0]) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const urlInput = container.querySelector('#cms-hero-mockup-url');
+            if (urlInput) urlInput.value = e.target.result;
+          };
+          reader.readAsDataURL(mockupFile.files[0]);
+        }
+      };
+    }
+
     formHero.onsubmit = (e) => {
       e.preventDefault();
       store.updateCMS({
